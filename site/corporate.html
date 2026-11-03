@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Corporate Orders | The Mad Popper</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="site-header"></div>
+  <section class="page-hero"><div class="container"><h1>Corporate Orders</h1><p>Popcorn for your whole team.</p>
+  </div></section>
+  <main class="container">
+    <div class="calc">
+      <form id="calc" class="card" novalidate>
+        <label>Bag size <select id="size"></select></label>
+        <label>Number of bags <input id="quantity" type="number" min="1" step="1" value="100"></label>
+        <label>Number of flavors <input id="flavors" type="number" min="1" max="6" step="1" value="2"></label>
+        <fieldset><legend>Customization</legend><div id="options"></div></fieldset>
+        <label>Pickup or delivery <select id="fulfillment"></select></label>
+        <label>Date needed <input id="date" type="date"></label>
+      </form>
+      <aside id="result" class="card result" aria-live="polite"></aside>
+    </div>
+
+    <h2>How it works</h2>
+    <ol>
+      <li>Pick your bag size, quantity and the date you need it.</li>
+      <li>See your price instantly.</li>
+      <li>We pop it fresh and you pick up, or we deliver to your business.</li>
+    </ol>
+    <p class="muted">Pickup or local business delivery only. We do <strong>not</strong> ship. Everything we make is 100% nut-free.</p>
+  </main>
+  <div id="site-footer"></div>
+  <script type="module" src="js/layout.js"></script>
+  <script type="module" src="js/calculator.js"></script>
+</body>
+</html>

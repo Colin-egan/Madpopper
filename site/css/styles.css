@@ -24,3 +24,13 @@ table{border-collapse:collapse;width:100%} th,td{padding:8px 10px;border-bottom:
 
 .mt-lg{margin-top:24px}
 .table-wrap{overflow-x:auto}
+
+/* Corporate calculator */
+.calc{display:grid;gap:24px}
+@media(min-width:900px){.calc{grid-template-columns:1.2fr 1fr;align-items:start}.result{position:sticky;top:90px}}
+#calc label{display:block;margin-bottom:14px;font-weight:600}
+#calc input[type=number],#calc input[type=date],#calc select{display:block;width:100%;margin-top:4px;padding:10px;border:1px solid #d8cbb8;border-radius:8px;font:inherit}
+#calc fieldset{border:1px solid #eadfd0;border-radius:8px;margin:0 0 14px}
+.check{font-weight:400!important}.check input{margin-right:8px}
+.total{font-size:2.4rem;font-weight:800;margin:0}.muted{color:var(--muted);font-size:.9rem}
+.num{text-align:right;white-space:nowrap}.errors{color:#b3261e;padding-left:18px}
