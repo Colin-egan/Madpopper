@@ -35,9 +35,6 @@ function init() {
     '</div>').join('');
 
   $('date').min = todayStr();
-  const days = $('date-range');
-  days.max = CONFIG.maxAdvanceDays;
-  days.value = 0;
   $('date-hint').textContent = `Standard lead time is ${CONFIG.leadTimeBusinessDays} business days. Sooner orders carry a rush fee.`;
 }
 
@@ -53,26 +50,11 @@ function syncFlavors() {
     (extra ? ` (${extra} extra).` : '.');
 }
 
-const dayOffset = (dateStr) => {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const [ty, tm, td] = todayStr().split('-').map(Number);
-  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86400000);
-};
-const dateFromOffset = (n) => {
-  const [ty, tm, td] = todayStr().split('-').map(Number);
-  return new Date(Date.UTC(ty, tm - 1, td + n)).toISOString().slice(0, 10);
-};
-
-// Keep each slider and its text/number input showing the same value.
+// Keep the bag slider and number input showing the same value.
 function wireSliders() {
-  const q = $('quantity'), qr = $('quantity-range'), d = $('date'), dr = $('date-range');
+  const q = $('quantity'), qr = $('quantity-range');
   qr.addEventListener('input', () => { q.value = qr.value; });
   q.addEventListener('input', () => { qr.value = Math.min(Math.max(Number(q.value) || 0, qr.min), qr.max); });
-  dr.addEventListener('input', () => { d.value = dateFromOffset(Number(dr.value)); });
-  d.addEventListener('input', () => {
-    const n = d.value ? dayOffset(d.value) : 0;
-    dr.value = Math.min(Math.max(n, 0), dr.max);
-  });
 }
 
 function readInput() {
