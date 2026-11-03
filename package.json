@@ -1,0 +1,9 @@
+{
+  "name": "madpopper-corporate",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "start": "npx serve site -l 3000"
+  }
+}
