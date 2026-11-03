@@ -16,11 +16,32 @@
     <div class="calc">
       <form id="calc" class="card" novalidate>
         <label>Bag size <select id="size"></select></label>
-        <label>Number of bags <input id="quantity" type="number" min="1" step="1" value="100"></label>
-        <label>Number of flavors <input id="flavors" type="number" min="1" max="6" step="1" value="2"></label>
+        <div class="field">
+          <label for="quantity">Number of bags</label>
+          <div class="slider-row">
+            <input id="quantity-range" class="range" type="range" aria-label="Number of bags slider">
+            <input id="quantity" type="number" min="1" step="1" value="100">
+          </div>
+          <p class="hint" id="quantity-hint"></p>
+        </div>
+        <div class="field">
+          <span class="label-text" id="flavor-label">Flavors</span>
+          <details class="flavor-dd" id="flavor-dd">
+            <summary aria-labelledby="flavor-label"><span id="flavor-summary"></span></summary>
+            <div class="flavor-list" id="flavor-list" role="group" aria-labelledby="flavor-label"></div>
+          </details>
+          <p class="hint" id="flavor-hint"></p>
+        </div>
         <fieldset><legend>Customization</legend><div id="options"></div></fieldset>
         <label>Pickup or delivery <select id="fulfillment"></select></label>
-        <label>Date needed <input id="date" type="date"></label>
+        <div class="field">
+          <label for="date">Date needed</label>
+          <div class="slider-row">
+            <input id="date-range" class="range" type="range" min="0" step="1" aria-label="Days from today slider">
+            <input id="date" type="date">
+          </div>
+          <p class="hint" id="date-hint"></p>
+        </div>
       </form>
       <div class="result-col">
         <aside id="result" class="card result" aria-live="polite"></aside>

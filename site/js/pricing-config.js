@@ -26,6 +26,15 @@ export const CONFIG = {
     giftTag:      { label: 'Personalized thank-you tag',       perBag: 0.20, setup: 0 },
     sealedPack:   { label: 'Individually sealed (5-week shelf life packaging)', perBag: 0.15, setup: 0 },
   },
+  // Flavor menu copied from themadpopper.com/flavors. Price depends only on how many are picked.
+  flavorGroups: [
+    { label: 'All year', flavors: ['Classic', 'Yellow Cheddar Cheese', 'Caramel', 'The Mad Popper Blend', '"Q-Corn" BarBQ', 'White Cheddar', 'Jalapeno Cheddar', 'Confetti'] },
+    { label: 'Seasonal', flavors: ['Maple', 'Sweet Tea'] },
+    { label: 'Rotating: sweet', flavors: ['Black Cherry', 'Chocolate Cherry', 'Hot Cinnamon', 'Piña Colada', 'Birthday Cake', 'Cookies and Cream', 'Cinnamon and Sugar', 'Espresso', 'Pumpkin Spice', 'Apple Pie', 'Banana Pudding', 'French Toast', 'Strawberry Margarita', 'Lemon Meringue Pie', 'Honey BBQ', 'Pucker Up Watermelon', 'Sour Power', 'Apples and Honey', 'Pumpkin Spiced Caramel', 'Coffee Glaze'] },
+    { label: 'Rotating: savory', flavors: ['Cajun', 'Cheesy Pizza', 'Cheesy Taco', 'Chili Cheese Fry', 'Dill Pickle', 'Habanero Maple Bourbon', 'Hot Wings and Ranch', 'Parmesan Garlic', 'Lemon Pepper', 'Loaded Baked Potato', 'Old Bay', 'Salt and Vinegar', 'Sour Cream and Onion', 'Sweet Chili', 'Queso', 'Yum Yum Chili Crisp'] },
+    { label: 'Holiday (December)', flavors: ['Candy Cane', 'Hot Cocoa', 'Gingerbread', 'Cherry/Green Apple Mix'] },
+  ],
+  defaultFlavors: ['Classic', 'Caramel'],
   includedFlavors: 2,
   extraFlavorFee: 25, // per flavor beyond included
   maxFlavors: 6,

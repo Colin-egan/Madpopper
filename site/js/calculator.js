@@ -21,14 +21,65 @@ function init() {
   $('fulfillment').innerHTML = `<option value="pickup">${escapeHtml(CONFIG.delivery.pickup.label)}</option>` +
     Object.entries(CONFIG.delivery.zones).map(([k, z]) => `<option value="${escapeHtml(k)}">${escapeHtml(z.label)}</option>`).join('');
   $('quantity').min = CONFIG.minQuantity;
+  $('quantity').max = CONFIG.maxQuantity;
+  const range = $('quantity-range');
+  range.min = CONFIG.minQuantity;
+  range.max = CONFIG.maxQuantity;
+  range.step = 5;
+  range.value = $('quantity').value;
+  $('quantity-hint').textContent = `${CONFIG.minQuantity} to ${CONFIG.maxQuantity.toLocaleString()} bags. Larger orders are custom-quoted.`;
+
+  $('flavor-list').innerHTML = CONFIG.flavorGroups.map((g, gi) =>
+    `<div class="flavor-group"><p class="flavor-group-title">${escapeHtml(g.label)}</p>` +
+    g.flavors.map((f, fi) => `<label class="check"><input type="checkbox" class="flavor" id="fl-${gi}-${fi}" value="${escapeHtml(f)}"${CONFIG.defaultFlavors.includes(f) ? ' checked' : ''}> ${escapeHtml(f)}</label>`).join('') +
+    '</div>').join('');
+
   $('date').min = todayStr();
+  const days = $('date-range');
+  days.max = CONFIG.maxAdvanceDays;
+  days.value = 0;
+  $('date-hint').textContent = `Standard lead time is ${CONFIG.leadTimeBusinessDays} business days. Sooner orders carry a rush fee.`;
+}
+
+const selectedFlavors = () => [...document.querySelectorAll('.flavor:checked')].map((c) => c.value);
+
+function syncFlavors() {
+  const names = selectedFlavors();
+  const atMax = names.length >= CONFIG.maxFlavors;
+  document.querySelectorAll('.flavor').forEach((c) => { c.disabled = atMax && !c.checked; });
+  $('flavor-summary').textContent = names.length ? names.join(', ') : 'Choose flavors';
+  const extra = Math.max(0, names.length - CONFIG.includedFlavors);
+  $('flavor-hint').textContent = `${names.length} of ${CONFIG.maxFlavors} chosen. ${CONFIG.includedFlavors} included; each extra adds $${CONFIG.extraFlavorFee}` +
+    (extra ? ` (${extra} extra).` : '.');
+}
+
+const dayOffset = (dateStr) => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const [ty, tm, td] = todayStr().split('-').map(Number);
+  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86400000);
+};
+const dateFromOffset = (n) => {
+  const [ty, tm, td] = todayStr().split('-').map(Number);
+  return new Date(Date.UTC(ty, tm - 1, td + n)).toISOString().slice(0, 10);
+};
+
+// Keep each slider and its text/number input showing the same value.
+function wireSliders() {
+  const q = $('quantity'), qr = $('quantity-range'), d = $('date'), dr = $('date-range');
+  qr.addEventListener('input', () => { q.value = qr.value; });
+  q.addEventListener('input', () => { qr.value = Math.min(Math.max(Number(q.value) || 0, qr.min), qr.max); });
+  dr.addEventListener('input', () => { d.value = dateFromOffset(Number(dr.value)); });
+  d.addEventListener('input', () => {
+    const n = d.value ? dayOffset(d.value) : 0;
+    dr.value = Math.min(Math.max(n, 0), dr.max);
+  });
 }
 
 function readInput() {
   return {
     size: $('size').value,
     quantity: Number($('quantity').value),
-    flavors: Number($('flavors').value),
+    flavors: selectedFlavors().length,
     options: [...document.querySelectorAll('.option:checked')].map((c) => c.value),
     fulfillment: $('fulfillment').value,
     date: $('date').value,
@@ -57,7 +108,7 @@ function render() {
   const subject = encodeURIComponent('Corporate order request (prototype)');
   const body = encodeURIComponent(
     'Prototype estimate (case-study pricing, hypothetical). ' +
-    `Size: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors: ${input.flavors}\n` +
+    `Size: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors (${input.flavors}): ${selectedFlavors().join(', ')}\n` +
     `Options: ${optionLabels}\nFulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
   box.innerHTML = `
     <h2>Your price</h2>
@@ -68,6 +119,12 @@ function render() {
 }
 
 init();
-$('calc').addEventListener('input', render);
-$('calc').addEventListener('change', render);
+wireSliders();
+syncFlavors();
+$('calc').addEventListener('input', () => { syncFlavors(); render(); });
+$('calc').addEventListener('change', () => { syncFlavors(); render(); });
+document.addEventListener('click', (e) => {
+  const dd = $('flavor-dd');
+  if (dd.open && !dd.contains(e.target)) dd.open = false;
+});
 render();
