@@ -1,5 +1,6 @@
 import { CONFIG } from './pricing-config.js';
 import { calculateQuote } from './pricing.js';
+import { initPricingEditor } from './pricing-editor.js';
 
 const SHOP_PHONE = 'tel:+19194847677';
 
@@ -20,14 +21,8 @@ function init() {
     .map(([k, o]) => `<label class="check"><input type="checkbox" class="option" value="${escapeHtml(k)}"> ${escapeHtml(o.label)}</label>`).join('');
   $('fulfillment').innerHTML = `<option value="pickup">${escapeHtml(CONFIG.delivery.pickup.label)}</option>` +
     Object.entries(CONFIG.delivery.zones).map(([k, z]) => `<option value="${escapeHtml(k)}">${escapeHtml(z.label)}</option>`).join('');
-  $('quantity').min = CONFIG.minQuantity;
-  $('quantity').max = CONFIG.maxQuantity;
-  const range = $('quantity-range');
-  range.min = CONFIG.minQuantity;
-  range.max = CONFIG.maxQuantity;
-  range.step = 5;
-  range.value = $('quantity').value;
-  $('quantity-hint').textContent = `${CONFIG.minQuantity} to ${CONFIG.maxQuantity.toLocaleString()} bags. Larger orders are custom-quoted.`;
+  $('quantity-range').step = 5;
+  refreshLabels();
 
   $('flavor-list').innerHTML = CONFIG.flavorGroups.map((g, gi) =>
     `<div class="flavor-group"><p class="flavor-group-title">${escapeHtml(g.label)}</p>` +
@@ -35,6 +30,19 @@ function init() {
     '</div>').join('');
 
   $('date').min = todayStr();
+}
+
+// Text and limits that depend on CONFIG; run again whenever the pricing editor changes a number.
+function refreshLabels() {
+  const chosen = $('size').value;
+  $('size').innerHTML = Object.entries(CONFIG.sizes)
+    .map(([k, s]) => `<option value="${escapeHtml(k)}">${escapeHtml(s.label)}, $${s.unitPrice.toFixed(2)} each</option>`).join('');
+  $('size').value = chosen in CONFIG.sizes ? chosen : 'mini';
+  const q = $('quantity'), range = $('quantity-range');
+  q.min = range.min = CONFIG.minQuantity;
+  q.max = range.max = CONFIG.maxQuantity;
+  range.value = Math.min(Math.max(Number(q.value) || 0, CONFIG.minQuantity), CONFIG.maxQuantity);
+  $('quantity-hint').textContent = `${CONFIG.minQuantity} to ${CONFIG.maxQuantity.toLocaleString()} bags. Larger orders are custom-quoted.`;
   $('date-hint').textContent = `Standard lead time is ${CONFIG.leadTimeBusinessDays} business days. Sooner orders carry a rush fee.`;
 }
 
@@ -103,6 +111,7 @@ function render() {
 init();
 wireSliders();
 syncFlavors();
+initPricingEditor(() => { refreshLabels(); syncFlavors(); render(); });
 $('calc').addEventListener('input', () => { syncFlavors(); render(); });
 $('calc').addEventListener('change', () => { syncFlavors(); render(); });
 document.addEventListener('click', (e) => {

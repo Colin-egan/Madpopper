@@ -54,6 +54,17 @@
     </ol>
     <p class="muted">Pickup or local business delivery only. We do <strong>not</strong> ship. Everything we make is 100% nut-free.</p>
   </main>
+  <button type="button" id="pricing-editor-open" class="pe-open" aria-haspopup="dialog">Edit pricing</button>
+  <dialog id="pricing-editor" class="pe-dialog" aria-labelledby="pricing-editor-title">
+    <div class="pe-head">
+      <h2 id="pricing-editor-title">Pricing settings</h2>
+      <button type="button" id="pricing-editor-close" class="pe-close" aria-label="Close">&times;</button>
+    </div>
+    <p class="hint">Every change updates the calculator right away and is saved in this browser only. It does not change the published site.</p>
+    <p id="pricing-msg" class="pe-msg" role="status"></p>
+    <form id="pricing-form" novalidate onsubmit="return false"></form>
+    <div class="pe-foot"><button type="button" id="pricing-reset" class="btn btn--ghost">Reset to original numbers</button><button type="button" class="btn" onclick="document.getElementById('pricing-editor').close()">Done</button></div>
+  </dialog>
   <a id="price-bar" class="price-bar" href="#result"><span>Your price</span><strong id="price-bar-total">Pick a date</strong><span aria-hidden="true">See breakdown &darr;</span></a>
   <div id="site-footer"></div>
   <script type="module" src="js/layout.js"></script>
