@@ -28,9 +28,9 @@ test('100 minis, pickup, standard lead time: 15% volume discount', () => {
 });
 
 test('add-ons are not discounted; setup is one-time', () => {
-  const q = calculateQuote({ ...base, options: ['brandedLabel', 'giftTag'] }, TODAY);
-  // 106.25 + 100*0.30 + 75 + 100*0.20 = 231.25
-  assert.equal(q.total, 231.25);
+  const q = calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY);
+  // 106.25 + 100*0.30 + 75 = 211.25 (discount applies to bags only)
+  assert.equal(q.total, 211.25);
 });
 
 test('extra flavors beyond 2 cost $25 each', () => {
@@ -130,7 +130,7 @@ test('1000 minis hits the 25% tier', () => {
 
 test('line items foot to the total for every size, quantity, option set and lead time', () => {
   const sum = (lines) => Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-  const optionSets = [[], ['brandedLabel', 'giftTag', 'sealedPack']];
+  const optionSets = [[], ['brandedLabel']];
   const dates = ['2027-06-25', '2027-06-17']; // standard, rush
   for (const size of Object.keys(CONFIG.sizes)) {
     for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {

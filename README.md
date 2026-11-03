@@ -71,8 +71,6 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 | Option | Per bag | Setup |
 |---|---|---|
 | Custom-branded label (your logo) | $0.30 | $75.00 |
-| Personalized thank-you tag | $0.20 | $0.00 |
-| Individually sealed (5-week shelf life packaging) | $0.15 | $0.00 |
 
 **Flavors:** 2 included, $25 for each additional flavor, up to 6 total.
 

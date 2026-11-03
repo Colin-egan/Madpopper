@@ -23,8 +23,6 @@ export const CONFIG = {
   maxQuantity: 2000, // above this, show "request a custom quote"
   options: {
     brandedLabel: { label: 'Custom-branded label (your logo)', perBag: 0.30, setup: 75 },
-    giftTag:      { label: 'Personalized thank-you tag',       perBag: 0.20, setup: 0 },
-    sealedPack:   { label: 'Individually sealed (5-week shelf life packaging)', perBag: 0.15, setup: 0 },
   },
   // Only flavors on sale now (checked themadpopper.com on 2026-11-03): the all-year menu, the
   // fall/winter seasonal, and this week's rotating flavors. Update when the shop's menu changes.
