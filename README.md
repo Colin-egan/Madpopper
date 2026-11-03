@@ -87,3 +87,11 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 ## Deploy
 
 The site is static, with no build step. On Vercel, import the repository and set the **Root Directory** to `site/`. Leave the build command and output directory empty. `site/vercel.json` enables clean URLs (`/corporate`) and disables trailing slashes. All pages carry `noindex`, since this is a prototype.
+
+## Editing prices on the live site
+
+The corporate page has an **Edit pricing** button (bottom left). Changes preview instantly for the person editing. **Publish to public site** saves them for every visitor, and needs the edit password.
+
+- Settings are stored in a Vercel Blob store (`madpopper-pricing`) and served by `site/api/pricing.js`. The server re-checks every number with `site/js/pricing-settings.js`, so a bad value can't be published.
+- The edit password is the `PRICING_EDIT_PASSWORD` environment variable in the Vercel project. Change it with `vercel env rm PRICING_EDIT_PASSWORD` and `vercel env add PRICING_EDIT_PASSWORD production`, then redeploy.
+- Published settings override the defaults in `site/js/pricing-config.js`. A new publish can take a few seconds to reach other visitors.

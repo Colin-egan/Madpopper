@@ -1,75 +1,24 @@
 import { CONFIG } from './pricing-config.js';
+import { snapshot, apply, validate, merge, DEFAULTS } from './pricing-settings.js';
 
-const STORAGE_KEY = 'madpopper-pricing-v1';
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// The numbers an editor may change. Labels, flavor lists and date rules stay in pricing-config.js.
-function snapshot() {
-  return {
-    sizes: Object.fromEntries(Object.entries(CONFIG.sizes).map(([k, s]) => [k, s.unitPrice])),
-    tiers: CONFIG.tiers.map((t) => ({ min: t.min, discount: t.discount })),
-    minQuantity: CONFIG.minQuantity,
-    maxQuantity: CONFIG.maxQuantity,
-    options: Object.fromEntries(Object.entries(CONFIG.options).map(([k, o]) => [k, { perBag: o.perBag, setup: o.setup }])),
-    includedFlavors: CONFIG.includedFlavors,
-    extraFlavorFee: CONFIG.extraFlavorFee,
-    maxFlavors: CONFIG.maxFlavors,
-    zones: Object.fromEntries(Object.entries(CONFIG.delivery.zones).map(([k, z]) => [k, z.fee])),
-    leadTimeBusinessDays: CONFIG.leadTimeBusinessDays,
-    rushMinBusinessDays: CONFIG.rush.minBusinessDays,
-    rushSurcharge: CONFIG.rush.surcharge,
-  };
-}
+const API = '/api/pricing';
+const PASSWORD_KEY = 'madpopper-edit-password';
 
-const DEFAULTS = snapshot();
-
-function apply(s) {
-  for (const [k, v] of Object.entries(s.sizes)) CONFIG.sizes[k].unitPrice = v;
-  CONFIG.tiers.splice(0, CONFIG.tiers.length, ...s.tiers.map((t) => ({ ...t })).sort((a, b) => b.min - a.min));
-  CONFIG.minQuantity = s.minQuantity;
-  CONFIG.maxQuantity = s.maxQuantity;
-  for (const [k, o] of Object.entries(s.options)) Object.assign(CONFIG.options[k], o);
-  CONFIG.includedFlavors = s.includedFlavors;
-  CONFIG.extraFlavorFee = s.extraFlavorFee;
-  CONFIG.maxFlavors = s.maxFlavors;
-  for (const [k, fee] of Object.entries(s.zones)) CONFIG.delivery.zones[k].fee = fee;
-  CONFIG.leadTimeBusinessDays = s.leadTimeBusinessDays;
-  CONFIG.rush.minBusinessDays = s.rushMinBusinessDays;
-  CONFIG.rush.surcharge = s.rushSurcharge;
-}
-
-// Returns an error message, or '' when the settings are safe to use.
-function validate(s) {
-  const nums = [...Object.values(s.sizes), ...s.tiers.flatMap((t) => [t.min, t.discount]), s.minQuantity, s.maxQuantity,
-    ...Object.values(s.options).flatMap((o) => [o.perBag, o.setup]), s.includedFlavors, s.extraFlavorFee, s.maxFlavors,
-    ...Object.values(s.zones), s.leadTimeBusinessDays, s.rushMinBusinessDays, s.rushSurcharge];
-  if (nums.some((n) => !Number.isFinite(n) || n < 0)) return 'Every field needs a number of 0 or more.';
-  if (Object.values(s.sizes).some((p) => p <= 0)) return 'Bag prices must be above $0.';
-  if (!Number.isInteger(s.minQuantity) || s.minQuantity < 1) return 'Minimum order must be a whole number of bags, at least 1.';
-  if (!Number.isInteger(s.maxQuantity) || s.maxQuantity < s.minQuantity) return 'Max order before custom pricing must be a whole number at least as large as the minimum order.';
-  if (s.tiers.some((t) => t.discount > 1)) return 'Discounts cannot be above 100%.';
-  if (!s.tiers.some((t) => t.min <= 1)) return 'Keep one tier that starts at 1 bag.';
-  if (new Set(s.tiers.map((t) => t.min)).size !== s.tiers.length) return 'Two discount tiers start at the same bag count.';
-  if (s.maxFlavors < 1 || s.includedFlavors > s.maxFlavors) return 'Included flavors cannot be more than the maximum flavors.';
-  if (s.rushMinBusinessDays > s.leadTimeBusinessDays) return 'The rush cutoff cannot be longer than the standard lead time.';
-  return '';
-}
-
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* private mode: edits last for this visit */ }
-}
-
-function loadSaved() {
+// Loads the settings the owner published (if any) so every visitor sees the same prices.
+export async function loadPublishedSettings() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const s = JSON.parse(raw);
-    const merged = { ...DEFAULTS, ...s };
-    for (const key of ['sizes', 'options', 'zones']) merged[key] = { ...DEFAULTS[key], ...(s[key] || {}) };
-    if (!Array.isArray(merged.tiers)) merged.tiers = DEFAULTS.tiers;
-    if (!validate(merged)) apply(merged);
-  } catch { /* ignore a corrupt saved value */ }
+    const res = await fetch(API, { cache: 'no-store', signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const { settings } = await res.json();
+    if (!settings) return null;
+    const merged = merge(settings);
+    if (validate(merged)) return null;
+    apply(merged);
+    return merged;
+  } catch { return null; /* offline or no API: the original numbers still work */ }
 }
 
 const num = (id, label, value, opts = '') =>
@@ -144,16 +93,20 @@ function readForm(form) {
   return { settings: out, blank, filled };
 }
 
-export function initPricingEditor(onChange) {
-  loadSaved();
+export function initPricingEditor(onChange, published) {
   const dialog = document.getElementById('pricing-editor');
   const form = document.getElementById('pricing-form');
   const msg = document.getElementById('pricing-msg');
   const open = document.getElementById('pricing-editor-open');
+  const pw = document.getElementById('pricing-password');
+  const publishBtn = document.getElementById('pricing-publish');
   if (!dialog || !form || !open) return;
 
-  const render = () => { buildForm(form); msg.textContent = ''; };
+  let publishedSettings = published || DEFAULTS;
+  const say = (text, isError = false) => { msg.textContent = text; msg.classList.toggle('is-error', isError); };
+  const render = () => { buildForm(form); say(''); };
   render();
+  try { pw.value = sessionStorage.getItem(PASSWORD_KEY) || ''; } catch { /* private mode */ }
 
   open.addEventListener('click', () => { render(); dialog.showModal(); });
   document.getElementById('pricing-editor-close').addEventListener('click', () => dialog.close());
@@ -162,11 +115,9 @@ export function initPricingEditor(onChange) {
   form.addEventListener('input', () => {
     const { settings, blank } = readForm(form);
     const error = blank ? 'Fill in every field.' : validate(settings);
-    msg.textContent = error;
-    msg.classList.toggle('is-error', Boolean(error));
-    if (error) return;
+    if (error) { say(error, true); return; }
     apply(settings);
-    save();
+    say('Previewing your changes. Only you see them until you publish.');
     onChange();
   });
 
@@ -180,12 +131,36 @@ export function initPricingEditor(onChange) {
     if (rm) { rm.closest('[data-tier]').remove(); form.dispatchEvent(new Event('input')); }
   });
 
+  // Throw away unpublished edits and go back to what the public site is showing.
   document.getElementById('pricing-reset').addEventListener('click', () => {
-    apply(DEFAULTS);
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* nothing saved */ }
+    apply(publishedSettings);
     render();
-    msg.textContent = 'Back to the original numbers.';
-    msg.classList.remove('is-error');
+    say('Back to the published numbers.');
     onChange();
+  });
+
+  publishBtn.addEventListener('click', async () => {
+    const { settings, blank } = readForm(form);
+    const error = blank ? 'Fill in every field.' : validate(settings);
+    if (error) { say(error, true); return; }
+    if (!pw.value) { say('Enter the edit password to publish.', true); pw.focus(); return; }
+    publishBtn.disabled = true;
+    say('Publishing...');
+    try {
+      const res = await fetch(API, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json', 'x-edit-password': pw.value },
+        body: JSON.stringify({ settings }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) { say(body.error || 'Could not publish. Try again.', true); return; }
+      publishedSettings = merge(body.settings);
+      try { sessionStorage.setItem(PASSWORD_KEY, pw.value); } catch { /* private mode */ }
+      say('Published. Everyone who opens this page now sees these prices.');
+    } catch {
+      say('Could not reach the server. Check your connection and try again.', true);
+    } finally {
+      publishBtn.disabled = false;
+    }
   });
 }

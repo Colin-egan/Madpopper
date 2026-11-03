@@ -1,6 +1,6 @@
 import { CONFIG } from './pricing-config.js';
 import { calculateQuote } from './pricing.js';
-import { initPricingEditor } from './pricing-editor.js';
+import { initPricingEditor, loadPublishedSettings } from './pricing-editor.js';
 
 const SHOP_PHONE = 'tel:+19194847677';
 
@@ -108,10 +108,13 @@ function render() {
     <p><a class="btn" href="mailto:?subject=${subject}&amp;body=${body}">Request this order</a></p>`;
 }
 
+// Prices the owner published come first, so the page never flashes the original numbers.
+const published = await loadPublishedSettings();
+
 init();
 wireSliders();
 syncFlavors();
-initPricingEditor(() => { refreshLabels(); syncFlavors(); render(); });
+initPricingEditor(() => { refreshLabels(); syncFlavors(); render(); }, published);
 $('calc').addEventListener('input', () => { syncFlavors(); render(); });
 $('calc').addEventListener('change', () => { syncFlavors(); render(); });
 document.addEventListener('click', (e) => {

@@ -60,10 +60,16 @@
       <h2 id="pricing-editor-title">Pricing settings</h2>
       <button type="button" id="pricing-editor-close" class="pe-close" aria-label="Close">&times;</button>
     </div>
-    <p class="hint">Every change updates the calculator right away and is saved in this browser only. It does not change the published site.</p>
+    <p class="hint">Changes update the calculator right away so you can preview them. They only go to the public site when you publish with the edit password.</p>
     <p id="pricing-msg" class="pe-msg" role="status"></p>
     <form id="pricing-form" novalidate onsubmit="return false"></form>
-    <div class="pe-foot"><button type="button" id="pricing-reset" class="btn btn--ghost">Reset to original numbers</button><button type="button" class="btn" onclick="document.getElementById('pricing-editor').close()">Done</button></div>
+    <div class="pe-foot">
+      <label class="pe-pw" for="pricing-password"><span>Edit password</span><input id="pricing-password" type="password" autocomplete="current-password"></label>
+      <div class="pe-actions">
+        <button type="button" id="pricing-reset" class="btn btn--ghost">Discard changes</button>
+        <button type="button" id="pricing-publish" class="btn">Publish to public site</button>
+      </div>
+    </div>
   </dialog>
   <a id="price-bar" class="price-bar" href="#result"><span>Your price</span><strong id="price-bar-total">Pick a date</strong><span aria-hidden="true">See breakdown &darr;</span></a>
   <div id="site-footer"></div>
