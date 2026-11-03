@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { CONFIG } from '../site/js/pricing-config.js';
 import { parseDate, businessDaysBetween, calculateQuote } from '../site/js/pricing.js';
 
 test('parseDate accepts valid and rejects invalid dates', () => {
@@ -125,4 +126,21 @@ test('1000 minis hits the 25% tier', () => {
   const q = calculateQuote({ ...base, quantity: 1000, date: '2027-07-20' }, TODAY);
   assert.equal(q.discountRate, 0.25);
   assert.equal(q.total, 937.5);
+});
+
+test('line items foot to the total for every size, quantity, option set and lead time', () => {
+  const sum = (lines) => Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
+  const optionSets = [[], ['brandedLabel', 'giftTag', 'sealedPack']];
+  const dates = ['2027-06-25', '2027-06-17']; // standard, rush
+  for (const size of Object.keys(CONFIG.sizes)) {
+    for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {
+      for (const options of optionSets) {
+        for (const date of dates) {
+          const q = calculateQuote({ ...base, size, quantity, options, date }, TODAY);
+          assert.equal(q.ok, true);
+          assert.equal(sum(q.lines), q.total, `${size} x${quantity} [${options}] ${date}`);
+        }
+      }
+    }
+  }
 });

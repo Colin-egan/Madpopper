@@ -72,6 +72,8 @@ export function calculateQuote(input, today) {
   }
   if (errors.length) return fail(errors);
 
+  // Every line is rounded to cents and the total is the sum of the rounded lines,
+  // so the displayed breakdown always foots to the displayed total.
   const lines = [];
   const base = sizeCfg.unitPrice * quantity;
   lines.push({ label: `${quantity} × ${sizeCfg.label} @ $${sizeCfg.unitPrice.toFixed(2)}`, amount: round2(base) });
@@ -81,33 +83,21 @@ export function calculateQuote(input, today) {
   if (discount > 0) lines.push({ label: `Volume discount (${Math.round(discountRate * 100)}%)`, amount: -round2(discount) });
 
   const discounted = base - discount;
-  let total = discounted;
 
   if (rush) {
     const fee = discounted * CONFIG.rush.surcharge;
     lines.push({ label: `Rush fee (${Math.round(CONFIG.rush.surcharge * 100)}%, under ${CONFIG.leadTimeBusinessDays} business days)`, amount: round2(fee) });
-    total += fee;
   }
   for (const key of optionKeys) {
     const o = CONFIG.options[key];
-    const fee = o.perBag * quantity;
-    lines.push({ label: `${o.label} ($${o.perBag.toFixed(2)}/bag)`, amount: round2(fee) });
-    total += fee;
-    if (o.setup) {
-      lines.push({ label: `${o.label}: one-time setup`, amount: o.setup });
-      total += o.setup;
-    }
+    lines.push({ label: `${o.label} ($${o.perBag.toFixed(2)}/bag)`, amount: round2(o.perBag * quantity) });
+    if (o.setup) lines.push({ label: `${o.label}: one-time setup`, amount: o.setup });
   }
   if (flavors > CONFIG.includedFlavors) {
-    const fee = (flavors - CONFIG.includedFlavors) * CONFIG.extraFlavorFee;
-    lines.push({ label: `${flavors - CONFIG.includedFlavors} extra flavor(s)`, amount: fee });
-    total += fee;
+    lines.push({ label: `${flavors - CONFIG.includedFlavors} extra flavor(s)`, amount: (flavors - CONFIG.includedFlavors) * CONFIG.extraFlavorFee });
   }
-  if (zone && zone.fee) {
-    lines.push({ label: `Delivery: ${zone.label}`, amount: zone.fee });
-    total += zone.fee;
-  }
+  if (zone && zone.fee) lines.push({ label: `Delivery: ${zone.label}`, amount: zone.fee });
 
-  total = round2(total);
+  const total = round2(lines.reduce((sum, l) => sum + l.amount, 0));
   return { ok: true, errors: [], needsQuote: false, lines, subtotal: round2(base), discountRate, total, perBag: round2(total / quantity), rush };
 }
