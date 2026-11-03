@@ -21,3 +21,6 @@ main{padding:32px 0 64px}
 .footer-grid{display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
 .site-footer h3{color:#fff;margin-top:0}.fineprint{font-size:.8rem;color:#999}
 table{border-collapse:collapse;width:100%} th,td{padding:8px 10px;border-bottom:1px solid #eadfd0;text-align:left}
+
+.mt-lg{margin-top:24px}
+.table-wrap{overflow-x:auto}

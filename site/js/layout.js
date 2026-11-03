@@ -3,14 +3,15 @@ const NAV = [
   ['fundraisers.html', 'Fundraisers'], ['popcorn-day.html', 'Popcorn Day'], ['gallery.html', 'Gallery'],
   ['about.html', 'About Us'], ['faq.html', 'FAQ'], ['corporate.html', 'Corporate'],
 ];
-const page = location.pathname.split('/').pop() || 'index.html';
+const strip = (p) => p.replace(/\.html$/, '');
+const page = strip(location.pathname.split('/').pop()) || 'index';
 
 const header = `
 <header class="site-header"><div class="container header-inner">
   <a href="index.html" class="logo"><img src="https://themadpopper.com/wp-content/uploads/2018/02/Logo-white.png" alt="The Mad Popper"></a>
-  <button class="nav-toggle" aria-label="Menu" aria-expanded="false">☰</button>
-  <nav class="nav">${NAV.map(([href, label]) =>
-    `<a href="${href}"${href === page ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
+  <button type="button" class="nav-toggle" aria-label="Menu" aria-controls="site-nav" aria-expanded="false">☰</button>
+  <nav class="nav" id="site-nav">${NAV.map(([href, label]) =>
+    `<a href="${href}"${strip(href) === page ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>
 </div></header>`;
 
 const footer = `
