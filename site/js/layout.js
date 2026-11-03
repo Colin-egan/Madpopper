@@ -8,7 +8,7 @@ const page = strip(location.pathname.split('/').pop()) || 'index';
 
 const header = `
 <header class="site-header"><div class="container header-inner">
-  <a href="index.html" class="logo"><img src="https://themadpopper.com/wp-content/uploads/2018/02/Logo-white.png" alt="The Mad Popper"></a>
+  <a href="index.html" class="logo" aria-label="The Mad Popper, home">The Mad <span>Popper</span></a>
   <button type="button" class="nav-toggle" aria-label="Menu" aria-controls="site-nav" aria-expanded="false">☰</button>
   <nav class="nav" id="site-nav">${NAV.map(([href, label]) =>
     `<a href="${href}"${strip(href) === page ? ' aria-current="page"' : ''}>${label}</a>`).join('')}</nav>

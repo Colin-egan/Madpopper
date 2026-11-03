@@ -39,6 +39,8 @@ function render() {
   const input = readInput();
   const q = calculateQuote(input, todayStr());
   const box = $('result');
+  $('price-bar-total').textContent = q.ok ? money(q.total)
+    : q.needsQuote ? 'Call for a quote' : !input.date ? 'Pick a date' : 'Check your details';
   if (!q.ok) {
     if (!input.date && q.errors.length === 1 && q.errors[0] === 'Pick the date you need your order.') {
       box.innerHTML = '<h2>Your price</h2><p class="muted">Pick the date you need your order to see your price.</p>';
