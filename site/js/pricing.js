@@ -23,10 +23,11 @@ const fail = (errors, needsQuote = false) => ({
 });
 
 export function calculateQuote(input, today) {
+  if (input === null || typeof input !== 'object') return fail(['Missing order details.']);
   const { size, quantity, flavors, options = [], fulfillment, date } = input;
   const errors = [];
 
-  const sizeCfg = CONFIG.sizes[size];
+  const sizeCfg = Object.hasOwn(CONFIG.sizes, size) ? CONFIG.sizes[size] : undefined;
   if (!sizeCfg) errors.push('Choose a bag size.');
 
   if (!Number.isInteger(quantity) || quantity < 1) {
@@ -40,16 +41,20 @@ export function calculateQuote(input, today) {
   if (!Number.isInteger(flavors) || flavors < 1 || flavors > CONFIG.maxFlavors) {
     errors.push(`Choose between 1 and ${CONFIG.maxFlavors} flavors.`);
   }
-  for (const o of options) {
-    if (!CONFIG.options[o]) errors.push(`Unknown option: ${o}.`);
+  const optionKeys = Array.isArray(options) ? [...new Set(options)] : [];
+  if (!Array.isArray(options)) errors.push('Options must be a list.');
+  for (const o of optionKeys) {
+    if (!Object.hasOwn(CONFIG.options, o)) errors.push(`Unknown option: ${String(o)}.`);
   }
-  const zone = CONFIG.delivery.zones[fulfillment];
+  const zone = Object.hasOwn(CONFIG.delivery.zones, fulfillment) ? CONFIG.delivery.zones[fulfillment] : undefined;
   if (fulfillment !== 'pickup' && !zone) errors.push('Choose pickup or a local business delivery zone.');
 
   const dateObj = parseDate(date);
   const todayObj = parseDate(today);
   let rush = false;
-  if (!dateObj) {
+  if (!todayObj) {
+    errors.push('Internal error: invalid current date.');
+  } else if (!dateObj) {
     errors.push('Pick the date you need your order.');
   } else {
     const days = Math.round((dateObj - todayObj) / DAY_MS);
@@ -83,7 +88,7 @@ export function calculateQuote(input, today) {
     lines.push({ label: `Rush fee (${Math.round(CONFIG.rush.surcharge * 100)}%, under ${CONFIG.leadTimeBusinessDays} business days)`, amount: round2(fee) });
     total += fee;
   }
-  for (const key of options) {
+  for (const key of optionKeys) {
     const o = CONFIG.options[key];
     const fee = o.perBag * quantity;
     lines.push({ label: `${o.label} ($${o.perBag.toFixed(2)}/bag)`, amount: round2(fee) });

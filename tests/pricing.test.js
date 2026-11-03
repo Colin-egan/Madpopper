@@ -49,10 +49,56 @@ test('rush (3 business days out) adds 25% of discounted bag subtotal', () => {
 });
 
 test('rejects too-soon dates, Sundays, past dates, and far-future dates', () => {
-  assert.equal(calculateQuote({ ...base, date: '2027-06-15' }, TODAY).ok, false); // 1 business day
-  assert.equal(calculateQuote({ ...base, date: '2027-06-27' }, TODAY).ok, false); // Sunday
-  assert.equal(calculateQuote({ ...base, date: '2027-06-01' }, TODAY).ok, false);
-  assert.equal(calculateQuote({ ...base, date: '2029-01-01' }, TODAY).ok, false);
+  const reject = (date, re) => {
+    const q = calculateQuote({ ...base, date }, TODAY);
+    assert.equal(q.ok, false);
+    assert.match(q.errors[0], re);
+  };
+  reject('2027-06-15', /business days/); // 1 business day
+  reject('2027-06-27', /Sunday|closed/); // Sunday
+  reject('2027-06-01', /future/);
+  reject('2029-01-01', /within the next year/);
+});
+
+test('rush boundaries: 2 and 4 business days are rush, 5 is standard', () => {
+  const q2 = calculateQuote({ ...base, date: '2027-06-16' }, TODAY);
+  assert.equal(q2.ok, true);
+  assert.equal(q2.rush, true);
+  const q4 = calculateQuote({ ...base, date: '2027-06-18' }, TODAY);
+  assert.equal(q4.ok, true);
+  assert.equal(q4.rush, true);
+  const q5 = calculateQuote({ ...base, date: '2027-06-19' }, TODAY); // Saturday
+  assert.equal(q5.ok, true);
+  assert.equal(q5.rush, false);
+});
+
+test('duplicate options are charged once', () => {
+  const one = calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY);
+  const dup = calculateQuote({ ...base, options: ['brandedLabel', 'brandedLabel'] }, TODAY);
+  assert.equal(one.total, 211.25);
+  assert.equal(dup.total, one.total);
+});
+
+test('inherited object keys are not accepted as size, option, or fulfillment', () => {
+  for (const k of ['toString', 'constructor', '__proto__']) {
+    assert.equal(calculateQuote({ ...base, fulfillment: k }, TODAY).ok, false);
+    assert.equal(calculateQuote({ ...base, size: k }, TODAY).ok, false);
+    assert.equal(calculateQuote({ ...base, options: [k] }, TODAY).ok, false);
+  }
+});
+
+test('malformed input fails validation instead of throwing', () => {
+  assert.equal(calculateQuote({ ...base, options: null }, TODAY).ok, false);
+  assert.equal(calculateQuote({ ...base, options: 'brandedLabel' }, TODAY).ok, false);
+  assert.equal(calculateQuote(undefined, TODAY).ok, false);
+  assert.equal(calculateQuote(null, TODAY).ok, false);
+  assert.equal(calculateQuote('nope', TODAY).ok, false);
+});
+
+test('invalid today is reported as an internal error', () => {
+  const q = calculateQuote(base, 'garbage');
+  assert.equal(q.ok, false);
+  assert.match(q.errors[0], /Internal error/);
 });
 
 test('validates quantity, size, flavors, options, fulfillment', () => {
