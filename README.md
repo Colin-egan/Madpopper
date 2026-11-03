@@ -1,69 +1,60 @@
-# Mad Popper — University Case Study
+# Mad Popper — Corporate Orders Calculator (Case Study)
 
-A static HTML site clone of [themadpopper.com](https://www.themadpopper.com) featuring a **corporate orders calculator** with live pricing.
+A static HTML clone of [themadpopper.com](https://www.themadpopper.com) with a **corporate orders calculator** that prices a bulk order live in the browser.
 
-**⚠️ Case Study:** This is a university prototype, not the official Mad Popper site. All content (pages, branding, pricing data) is copied from the original for educational purposes.
+**Case study, not the official site.** This is a university prototype. It is not affiliated with or endorsed by The Mad Popper. Only the retail bag price ladder is real data copied from the shop's site. Everything corporate (volume discounts, add-on fees, rush surcharge, delivery fees, lead times, limits) is a hypothetical case-study assumption defined in `site/js/pricing-config.js`. The calculator's quotes are not The Mad Popper's price list.
 
-## Quick Start
+## Quick start
 
-### Install dependencies
+There are no dependencies and nothing to install. Node 22 is recommended (the test glob `tests/**/*.test.js` needs Node 21+ to expand).
+
 ```bash
-npm install
+npm test     # runs tests/pricing.test.js with node:test
+npm start    # serves site/ at http://localhost:3000 (via npx serve)
 ```
 
-### Run tests
-```bash
-npm test
+Open `http://localhost:3000/corporate` for the calculator.
+
+## Project layout
+
+```
+site/                         # deployable root (Vercel root directory)
+├── index.html, about.html, sizes.html, flavors.html, gallery.html,
+│   faq.html, allergens.html, popcorn-day.html, fundraisers.html,
+│   corporate.html            # ten pages; corporate.html hosts the calculator
+├── css/styles.css            # all styles
+├── js/
+│   ├── layout.js             # shared header/footer and nav highlighting
+│   ├── pricing-config.js     # SINGLE SOURCE of every price and rule
+│   ├── pricing.js            # pure logic: calculateQuote, parseDate, businessDaysBetween
+│   └── calculator.js         # DOM wiring for corporate.html
+└── vercel.json               # cleanUrls, no trailing slash
+tests/pricing.test.js         # node:test suite for pricing.js
+docs/superpowers/plans/       # implementation plan
 ```
 
-Expected result: **17 pass, 0 fail**.
+`calculateQuote(input, today)` lives in `site/js/pricing.js`. It validates the input and returns line items, `subtotal`, `discountRate`, `total`, `perBag` and a `rush` flag. Each line is rounded to cents and the total is the sum of the rounded lines, so the breakdown always foots to the total.
 
-### Start local dev server
-```bash
-npm start
-```
+## Pricing assumptions
 
-Then open `http://localhost:8000` and navigate the 10 pages using the header menu. The Corporate page includes a live pricing calculator.
+Edit all pricing in `site/js/pricing-config.js`. Values below match that file.
 
-## Site Structure
+**Bag sizes (retail ladder, the only real data):**
 
-**Static pages (deployable to Vercel as `site/` directory):**
+| Size | Unit price |
+|---|---|
+| Mini bag (<1 cup) | $1.25 |
+| Cone / treat bag (1–2 cups) | $3.00 |
+| Snack bag (4 cups) | $5.95 |
+| "Mine" (6 cups) | $8.50 |
+| "Ours" (14 cups) | $15.00 |
+| "Family" (22 cups) | $21.50 |
+| "Party" (35 cups) | $31.50 |
+| "Big ol' popper" (74 cups) | $58.00 |
 
-1. **Home** (`index.html`) — Main landing page
-2. **About** (`about.html`) — About Mad Popper
-3. **Sizes** (`sizes.html`) — Bag size options and retail pricing
-4. **Flavors** (`flavors.html`) — Available popcorn flavors
-5. **Gallery** (`gallery.html`) — Photo gallery
-6. **FAQ** (`faq.html`) — Frequently asked questions
-7. **Allergens** (`allergens.html`) — Allergen information
-8. **Popcorn Day** (`popcorn-day.html`) — Community event
-9. **Fundraisers** (`fundraisers.html`) — Fundraising info
-10. **Corporate** (`corporate.html`) — **NEW:** Corporate orders calculator with live pricing
+**Volume discount** (case-study assumption, applied to the bag subtotal; the highest matching tier wins):
 
-## Corporate Calculator
-
-The corporate pricing calculator on `/corporate.html` uses a **single configuration file** for all pricing logic.
-
-### Pricing Assumptions
-
-All assumptions below are **case-study placeholders** (editable in one file). Retail unit prices are published prices from themadpopper.com.
-
-**Edit all pricing here:** `site/js/pricing-config.js`
-
-#### Bag Sizes & Unit Prices
-- Mini bag (<1 cup): **$1.25**
-- Cone / treat bag (1–2 cups): **$3.00**
-- Snack bag (4 cups): **$5.95**
-- "Mine" (6 cups): **$8.50**
-- "Ours" (14 cups): **$15.00**
-- "Family" (22 cups): **$21.50**
-- "Party" (35 cups): **$31.50**
-- "Big ol' popper" (74 cups): **$58.00**
-
-#### Volume Discount Tiers
-Applied to bag subtotal (highest tier matching quantity wins):
-
-| Quantity Range | Discount |
+| Bags | Discount |
 |---|---|
 | 1000+ | 25% |
 | 300–999 | 20% |
@@ -71,88 +62,28 @@ Applied to bag subtotal (highest tier matching quantity wins):
 | 25–99 | 10% |
 | 1–24 | 0% |
 
-#### Order Constraints
-- **Minimum order:** 25 bags
-- **Maximum order:** 2000 bags (above this, calculator suggests "request a custom quote")
+The 1–24 tier never applies, because the minimum order is 25 bags.
 
-#### Add-on Fees
-Custom options, charged per bag + one-time setup:
+**Limits:** minimum 25 bags; maximum 2000 bags (above that the calculator offers a custom quote by phone).
 
-| Option | Per Bag | Setup |
+**Options** (not discounted; charged per bag plus a one-time setup):
+
+| Option | Per bag | Setup |
 |---|---|---|
 | Custom-branded label (your logo) | $0.30 | $75.00 |
 | Personalized thank-you tag | $0.20 | $0.00 |
 | Individually sealed (5-week shelf life packaging) | $0.15 | $0.00 |
 
-#### Flavors
-- **Included:** 2 flavors (in bag subtotal)
-- **Extra flavors:** $25 per flavor (up to 6 total)
-- **Max flavors:** 6
+**Flavors:** 2 included, $25 for each additional flavor, up to 6 total.
 
-#### Delivery Options
-- **Pickup at shop:** $0.00
-- **Durham / Chapel Hill / RTP (business address):** $35.00
-- **Raleigh / Cary / Morrisville (business address):** $55.00
+**Fulfillment:** pickup at the shop $0.00; Durham / Chapel Hill / RTP business address $35.00; Raleigh / Cary / Morrisville business address $55.00. No shipping.
 
-#### Lead Time & Rush Orders
-- **Standard lead time:** 5 business days
-- **Rush orders:** 2–4 business days, +25% surcharge on bag subtotal
-- **Max advance order:** 365 days
-- **Closed:** Sundays (no order fulfillment)
+**Lead time and rush:**
+- Standard lead time is 5 business days (Sundays are closed and do not count).
+- Rush is 2–4 business days and adds 25% of the *discounted* bag subtotal (not of add-ons, flavors or delivery).
+- Under 2 business days, the calculator asks the customer to call.
+- Orders can be placed up to 365 days ahead; Sunday pickup dates are rejected.
 
----
+## Deploy
 
-## Development
-
-### Project Layout
-```
-site/
-├── index.html                     # Static pages
-├── corporate.html                 # Corporate calculator page
-├── *.html                         # Other pages
-├── css/
-│   ├── shared-styles.css         # Shared layout & typography
-│   └── corporate.css             # Corporate page styles
-├── js/
-│   ├── pricing-config.js         # SINGLE SOURCE: all pricing config
-│   ├── calculator.js             # Pricing logic & form handling
-│   ├── header-footer.js          # Navigation & layout
-│   └── date-utils.js             # Date calculations (lead time, rush)
-└── assets/                        # Images & static files
-
-tests/
-├── pricing-config.test.js         # Config validation
-├── calculator.test.js              # Pricing formula tests
-└── date-utils.test.js             # Date/lead-time tests
-```
-
-### Key Files
-- **Config (single source of truth):** `site/js/pricing-config.js`
-- **Calculator engine:** `site/js/calculator.js` (exports `calculateQuote`)
-- **Date utilities:** `site/js/date-utils.js` (exports `parseDate`, `businessDaysBetween`)
-
-### Running Tests
-```bash
-npm test
-```
-
-Tests cover:
-- Pricing configuration validation
-- Quote calculations (all tier/option/delivery/rush combinations)
-- Business day calculations (excluding Sundays)
-- Input edge cases and constraints
-
-## Deployment
-
-This is a **static site** deployable to any host (Vercel, Netlify, GitHub Pages, etc.).
-
-### Deploy to Vercel
-```bash
-vercel --prod --cwd site/
-```
-
-The `site/` directory is the root for deployment.
-
----
-
-**Case Study Details:** Content and pricing are from themadpopper.com; this project is a university prototype to demonstrate corporate order calculator patterns. Not affiliated with or endorsed by Mad Popper.
+The site is static, with no build step. On Vercel, import the repository and set the **Root Directory** to `site/`. Leave the build command and output directory empty. `site/vercel.json` enables clean URLs (`/corporate`) and disables trailing slashes. All pages carry `noindex`, since this is a prototype.

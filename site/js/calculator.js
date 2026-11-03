@@ -1,7 +1,6 @@
 import { CONFIG } from './pricing-config.js';
 import { calculateQuote } from './pricing.js';
 
-const SHOP_EMAIL = 'themadpopper259@gmail.com';
 const SHOP_PHONE = 'tel:+19194847677';
 
 const $ = (id) => document.getElementById(id);
@@ -41,22 +40,29 @@ function render() {
   const q = calculateQuote(input, todayStr());
   const box = $('result');
   if (!q.ok) {
+    if (!input.date && q.errors.length === 1 && q.errors[0] === 'Pick the date you need your order.') {
+      box.innerHTML = '<h2>Your price</h2><p class="muted">Pick the date you need your order to see your price.</p>';
+      return;
+    }
     const quoteCta = q.needsQuote ? `<p><a class="btn" href="${SHOP_PHONE}">Call for a custom quote</a></p>` : '';
     box.innerHTML = `<h2>Your price</h2><ul class="errors">${q.errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>${quoteCta}`;
     return;
   }
   const rows = q.lines.map((l) => `<tr><td>${escapeHtml(l.label)}</td><td class="num">${money(l.amount)}</td></tr>`).join('');
-  const subject = encodeURIComponent('Corporate order request');
+  const fulfillmentLabel = input.fulfillment === 'pickup'
+    ? CONFIG.delivery.pickup.label : CONFIG.delivery.zones[input.fulfillment].label;
+  const optionLabels = input.options.map((k) => CONFIG.options[k].label).join(', ') || 'none';
+  const subject = encodeURIComponent('Corporate order request (prototype)');
   const body = encodeURIComponent(
+    'Prototype estimate (case-study pricing, hypothetical). ' +
     `Size: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors: ${input.flavors}\n` +
-    `Options: ${input.options.join(', ') || 'none'}\nFulfillment: ${input.fulfillment}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
+    `Options: ${optionLabels}\nFulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
   box.innerHTML = `
     <h2>Your price</h2>
     <p class="total">${money(q.total)}</p>
     <p class="muted">about ${money(q.perBag)} per bag</p>
     <table><tbody>${rows}</tbody></table>
-    <p><a class="btn" href="mailto:${SHOP_EMAIL}?subject=${subject}&amp;body=${body}">Request this order</a></p>
-    <p class="muted">Prices shown are estimates; final quote confirmed by The Mad Popper.</p>`;
+    <p><a class="btn" href="mailto:?subject=${subject}&amp;body=${body}">Request this order</a></p>`;
 }
 
 init();

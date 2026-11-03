@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
   <title>Corporate Orders | The Mad Popper</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -11,6 +12,7 @@
   <section class="page-hero"><div class="container"><h1>Corporate Orders</h1><p>Popcorn for your whole team.</p>
   </div></section>
   <main class="container">
+    <p class="card">Case-study pricing: these numbers are hypothetical and are not The Mad Popper's price list.</p>
     <div class="calc">
       <form id="calc" class="card" novalidate>
         <label>Bag size <select id="size"></select></label>
@@ -20,7 +22,10 @@
         <label>Pickup or delivery <select id="fulfillment"></select></label>
         <label>Date needed <input id="date" type="date"></label>
       </form>
-      <aside id="result" class="card result" aria-live="polite"></aside>
+      <div class="result-col">
+        <aside id="result" class="card result" aria-live="polite"></aside>
+        <p class="muted">Prices shown are estimates; final quote confirmed by The Mad Popper.</p>
+      </div>
     </div>
 
     <h2>How it works</h2>
