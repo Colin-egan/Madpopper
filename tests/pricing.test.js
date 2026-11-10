@@ -34,22 +34,19 @@ test('mini bag is the only size, at $2', () => {
 });
 
 test('no customization or one-time fees: more flavors and stray options cost nothing', () => {
-  assert.equal(calculateQuote({ ...base, flavors: 6 }, TODAY).total, 170);
+  assert.equal(calculateQuote({ ...base, flavors: 1 }, TODAY).total, 170);
   assert.equal(calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY).total, 170);
-  const labels = calculateQuote({ ...base, flavors: 6 }, TODAY).lines.map((l) => l.label).join(' ');
+  const labels = calculateQuote({ ...base, flavors: 2 }, TODAY).lines.map((l) => l.label).join(' ');
   assert.doesNotMatch(labels, /setup|flavor|label/i);
 });
 
-test('delivery zones add a flat fee', () => {
-  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 205);
-  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 225);
-});
-
-test('rush (3 business days out) adds 25% of discounted bag subtotal', () => {
-  // 2027-06-17 is 3 business days after Mon 06-14
-  const q = calculateQuote({ ...base, date: '2027-06-17' }, TODAY);
-  assert.equal(q.rush, true);
-  assert.equal(q.total, 212.5); // 170 + 42.50
+test('delivery is free and there is no rush fee', () => {
+  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 170);
+  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 170);
+  const soon = calculateQuote({ ...base, date: '2027-06-17', fulfillment: 'wake' }, TODAY); // 3 business days out
+  assert.equal(soon.ok, true);
+  assert.equal(soon.total, 170);
+  assert.doesNotMatch(soon.lines.map((l) => l.label).join(' '), /rush|delivery/i);
 });
 
 test('rejects too-soon dates, Sundays, past dates, and far-future dates', () => {
@@ -64,16 +61,9 @@ test('rejects too-soon dates, Sundays, past dates, and far-future dates', () => 
   reject('2029-01-01', /within the next year/);
 });
 
-test('rush boundaries: 2 and 4 business days are rush, 5 is standard', () => {
-  const q2 = calculateQuote({ ...base, date: '2027-06-16' }, TODAY);
-  assert.equal(q2.ok, true);
-  assert.equal(q2.rush, true);
-  const q4 = calculateQuote({ ...base, date: '2027-06-18' }, TODAY);
-  assert.equal(q4.ok, true);
-  assert.equal(q4.rush, true);
-  const q5 = calculateQuote({ ...base, date: '2027-06-19' }, TODAY); // Saturday
-  assert.equal(q5.ok, true);
-  assert.equal(q5.rush, false);
+test('lead time: 2 business days is the shortest accepted', () => {
+  assert.equal(calculateQuote({ ...base, date: '2027-06-15' }, TODAY).ok, false); // 1 business day
+  assert.equal(calculateQuote({ ...base, date: '2027-06-16' }, TODAY).ok, true); // 2 business days
 });
 
 test('inherited object keys are not accepted as size or fulfillment', () => {
@@ -100,7 +90,7 @@ test('validates quantity, size, flavors, fulfillment', () => {
   assert.equal(calculateQuote({ ...base, quantity: 12.5 }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, size: 'huge' }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, flavors: 0 }, TODAY).ok, false);
-  assert.equal(calculateQuote({ ...base, flavors: 7 }, TODAY).ok, false);
+  assert.equal(calculateQuote({ ...base, flavors: 3 }, TODAY).ok, false); // two flavors max
   assert.equal(calculateQuote({ ...base, fulfillment: 'ship' }, TODAY).ok, false); // no shipping
 });
 
@@ -122,7 +112,7 @@ test('1000 minis hits the 25% tier', () => {
 
 test('line items foot to the total for every quantity, delivery choice and lead time', () => {
   const sum = (lines) => Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-  const dates = ['2027-06-25', '2027-06-17']; // standard, rush
+  const dates = ['2027-06-25', '2027-06-16']; // well ahead, shortest notice
   for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {
     for (const fulfillment of ['pickup', 'durham', 'wake']) {
       for (const date of dates) {

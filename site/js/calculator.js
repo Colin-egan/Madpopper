@@ -37,7 +37,7 @@ function refreshLabels() {
   q.max = range.max = CONFIG.maxQuantity;
   range.value = Math.min(Math.max(Number(q.value) || 0, CONFIG.minQuantity), CONFIG.maxQuantity);
   $('quantity-hint').textContent = `${CONFIG.minQuantity} to ${CONFIG.maxQuantity.toLocaleString()} bags. Larger orders are custom-quoted.`;
-  $('date-hint').textContent = `Standard lead time is ${CONFIG.leadTimeBusinessDays} business days. Sooner orders carry a rush fee.`;
+  $('date-hint').textContent = `Order at least ${CONFIG.leadTimeBusinessDays} business days ahead (we're closed Sundays).`;
 }
 
 const selectedFlavors = () => [...document.querySelectorAll('.flavor:checked')].map((c) => c.value);

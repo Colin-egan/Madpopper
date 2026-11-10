@@ -36,8 +36,6 @@ function buildForm(form) {
   const s = snapshot();
   const sizes = Object.entries(CONFIG.sizes).map(([k, z]) =>
     num(`pe-size-${k}`, z.label, s.sizes[k], 'step="0.05" min="0" data-size="' + k + '"')).join('');
-  const zones = Object.entries(CONFIG.delivery.zones).map(([k, z]) =>
-    num(`pe-zone-${k}`, `Delivery: ${z.label} ($)`, z.fee, 'step="1" min="0" data-zone="' + k + '"')).join('');
   const tiers = s.tiers.slice().sort((a, b) => b.min - a.min).map((t) => tierRow(t, t.min <= 1)).join('');
   form.innerHTML = `
     <fieldset><legend>Order size</legend>
@@ -51,15 +49,8 @@ function buildForm(form) {
       <button type="button" class="pe-add" id="pe-add-tier">+ Add a tier</button>
       <p class="hint">Applies to the bag subtotal. The highest tier the order reaches is used.</p>
     </fieldset>
-    <fieldset><legend>Flavors</legend>
-      ${num('pe-maxfl', 'Most flavors per order', s.maxFlavors, 'step="1" min="1"')}
-    </fieldset>
-    <fieldset><legend>Delivery</legend>${zones}<p class="hint">Pickup is always free.</p></fieldset>
-    <fieldset><legend>Lead time and rush</legend>
-      ${num('pe-lead', 'Standard lead time (business days)', s.leadTimeBusinessDays, 'step="1" min="0"')}
-      ${num('pe-rushmin', 'Shortest order accepted (business days)', s.rushMinBusinessDays, 'step="1" min="0"')}
-      ${num('pe-rush', 'Rush fee (% of discounted bags)', +(s.rushSurcharge * 100).toFixed(2), 'step="0.5" min="0"')}
-      <p class="hint">Orders between the shortest and the standard lead time pay the rush fee.</p>
+    <fieldset><legend>Lead time</legend>
+      ${num('pe-lead', 'Shortest notice accepted (business days)', s.leadTimeBusinessDays, 'step="1" min="0"')}
     </fieldset>`;
 }
 
@@ -68,17 +59,15 @@ function readForm(form) {
   const filled = (sel) => form.querySelector(sel).value.trim() !== '';
   const s = snapshot();
   const out = {
-    sizes: {}, zones: {},
+    sizes: {},
     tiers: [...form.querySelectorAll('[data-tier]')].map((row) => ({
       min: Number(row.querySelector('[data-tier-min]').value),
       discount: Number(row.querySelector('[data-tier-discount]').value) / 100,
     })),
     minQuantity: v('#pe-min'), maxQuantity: v('#pe-max'),
-    maxFlavors: v('#pe-maxfl'),
-    leadTimeBusinessDays: v('#pe-lead'), rushMinBusinessDays: v('#pe-rushmin'), rushSurcharge: v('#pe-rush') / 100,
+    leadTimeBusinessDays: v('#pe-lead'),
   };
   for (const k of Object.keys(s.sizes)) out.sizes[k] = v(`[data-size="${k}"]`);
-  for (const k of Object.keys(s.zones)) out.zones[k] = v(`[data-zone="${k}"]`);
   // An emptied box reads as 0, so flag it rather than silently pricing at $0.
   const blank = [...form.querySelectorAll('input[type=number]')].some((i) => i.value.trim() === '');
   return { settings: out, blank, filled };

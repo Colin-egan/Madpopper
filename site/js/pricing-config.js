@@ -22,16 +22,15 @@ export const CONFIG = {
     { label: 'This week', flavors: ['Apple Pie', 'Sour Cream and Onion'] },
   ],
   defaultFlavors: ['Classic', 'Caramel'],
-  maxFlavors: 6,
+  maxFlavors: 2, // hospital orders allow two flavors; not editable in the pricing panel
   delivery: {
-    pickup: { label: 'Pickup at the shop', fee: 0 },
+    pickup: { label: 'Pickup at the shop' },
     zones: {
-      durham: { label: 'Durham / Chapel Hill / RTP (hospital or business address)', fee: 35 },
-      wake:   { label: 'Raleigh / Cary / Morrisville (hospital or business address)', fee: 55 },
+      durham: { label: 'Durham / Chapel Hill / RTP (hospital or business address)' },
+      wake:   { label: 'Raleigh / Cary / Morrisville (hospital or business address)' },
     },
   },
-  leadTimeBusinessDays: 5, // standard
-  rush: { minBusinessDays: 2, surcharge: 0.25 }, // 2-4 business days: +25% of bag subtotal
+  leadTimeBusinessDays: 2, // shortest notice we accept; there is no rush fee
   maxAdvanceDays: 365,
   closedWeekdays: [0], // Sunday (0). No orders ready on closed days.
 };

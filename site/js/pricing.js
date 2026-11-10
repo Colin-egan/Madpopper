@@ -19,7 +19,7 @@ export function businessDaysBetween(from, to) {
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const fail = (errors, needsQuote = false) => ({
-  ok: false, errors, needsQuote, lines: [], subtotal: 0, discountRate: 0, total: 0, perBag: 0, rush: false,
+  ok: false, errors, needsQuote, lines: [], subtotal: 0, discountRate: 0, total: 0, perBag: 0,
 });
 
 export function calculateQuote(input, today) {
@@ -39,14 +39,13 @@ export function calculateQuote(input, today) {
   }
 
   if (!Number.isInteger(flavors) || flavors < 1 || flavors > CONFIG.maxFlavors) {
-    errors.push(`Choose between 1 and ${CONFIG.maxFlavors} flavors.`);
+    errors.push(`Choose 1 or ${CONFIG.maxFlavors} flavors.`);
   }
   const zone = Object.hasOwn(CONFIG.delivery.zones, fulfillment) ? CONFIG.delivery.zones[fulfillment] : undefined;
   if (fulfillment !== 'pickup' && !zone) errors.push('Choose pickup or a local delivery zone.');
 
   const dateObj = parseDate(date);
   const todayObj = parseDate(today);
-  let rush = false;
   if (!todayObj) {
     errors.push('Internal error: invalid current date.');
   } else if (!dateObj) {
@@ -58,10 +57,8 @@ export function calculateQuote(input, today) {
     else if (CONFIG.closedWeekdays.includes(dateObj.getUTCDay())) errors.push('We are closed Sundays. Pick another day.');
     else {
       const bd = businessDaysBetween(todayObj, dateObj);
-      if (bd < CONFIG.rush.minBusinessDays) {
-        errors.push(`We need at least ${CONFIG.rush.minBusinessDays} business days. Call us for same-week needs.`);
-      } else if (bd < CONFIG.leadTimeBusinessDays) {
-        rush = true;
+      if (bd < CONFIG.leadTimeBusinessDays) {
+        errors.push(`We need at least ${CONFIG.leadTimeBusinessDays} business days. Call us for same-week needs.`);
       }
     }
   }
@@ -77,14 +74,7 @@ export function calculateQuote(input, today) {
   const discount = base * discountRate;
   if (discount > 0) lines.push({ label: `Volume discount (${Math.round(discountRate * 100)}%)`, amount: -round2(discount) });
 
-  const discounted = base - discount;
-
-  if (rush) {
-    const fee = discounted * CONFIG.rush.surcharge;
-    lines.push({ label: `Rush fee (${Math.round(CONFIG.rush.surcharge * 100)}%, under ${CONFIG.leadTimeBusinessDays} business days)`, amount: round2(fee) });
-  }
-  if (zone && zone.fee) lines.push({ label: `Delivery: ${zone.label}`, amount: zone.fee });
 
   const total = round2(lines.reduce((sum, l) => sum + l.amount, 0));
-  return { ok: true, errors: [], needsQuote: false, lines, subtotal: round2(base), discountRate, total, perBag: round2(total / quantity), rush };
+  return { ok: true, errors: [], needsQuote: false, lines, subtotal: round2(base), discountRate, total, perBag: round2(total / quantity) };
 }

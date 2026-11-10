@@ -2,7 +2,7 @@
 
 A static HTML clone of [themadpopper.com](https://www.themadpopper.com) with a **hospital orders page**: pick UNC Health, Duke Health or WakeMed to preview its branded bag, then price a bulk order live in the browser.
 
-**Case study, not the official site.** This is a university prototype. It is not affiliated with or endorsed by The Mad Popper. Everything in the hospital pricing (the $2 mini bag price, volume discounts, rush surcharge, delivery fees, lead times, limits) is a hypothetical case-study assumption defined in `site/js/pricing-config.js`. The calculator's quotes are not The Mad Popper's price list.
+**Case study, not the official site.** This is a university prototype. It is not affiliated with or endorsed by The Mad Popper. Everything in the hospital pricing (the $2 mini bag price, volume discounts, lead time, limits) is a hypothetical case-study assumption defined in `site/js/pricing-config.js`. The calculator's quotes are not The Mad Popper's price list.
 
 ## Quick start
 
@@ -33,7 +33,7 @@ tests/pricing.test.js         # node:test suite for pricing.js
 docs/superpowers/plans/       # implementation plan
 ```
 
-`calculateQuote(input, today)` lives in `site/js/pricing.js`. It validates the input and returns line items, `subtotal`, `discountRate`, `total`, `perBag` and a `rush` flag. Each line is rounded to cents and the total is the sum of the rounded lines, so the breakdown always foots to the total.
+`calculateQuote(input, today)` lives in `site/js/pricing.js`. It validates the input and returns line items, `subtotal`, `discountRate`, `total`, and `perBag`. Each line is rounded to cents and the total is the sum of the rounded lines, so the breakdown always foots to the total.
 
 ## Pricing assumptions
 
@@ -55,15 +55,11 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 
 **Limits:** minimum 25 bags; maximum 2000 bags (above that the calculator offers a custom quote by phone).
 
-**Flavors:** up to 6 per order.
+**Flavors:** up to 2 per order.
 
-**Fulfillment:** pickup at the shop $0.00; Durham / Chapel Hill / RTP business address $35.00; Raleigh / Cary / Morrisville business address $55.00. No shipping.
+**Fulfillment:** pickup at the shop, or delivery to a Durham / Chapel Hill / RTP or Raleigh / Cary / Morrisville address, all at no charge. No shipping.
 
-**Lead time and rush:**
-- Standard lead time is 5 business days (Sundays are closed and do not count).
-- Rush is 2–4 business days and adds 25% of the *discounted* bag subtotal (not of add-ons, flavors or delivery).
-- Under 2 business days, the calculator asks the customer to call.
-- Orders can be placed up to 365 days ahead; Sunday pickup dates are rejected.
+**Lead time:** orders need at least 2 business days' notice (Sundays are closed and do not count). There is no rush fee.
 
 ## Deploy
 

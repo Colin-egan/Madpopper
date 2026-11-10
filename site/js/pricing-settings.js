@@ -8,11 +8,7 @@ export function snapshot() {
     tiers: CONFIG.tiers.map((t) => ({ min: t.min, discount: t.discount })),
     minQuantity: CONFIG.minQuantity,
     maxQuantity: CONFIG.maxQuantity,
-    maxFlavors: CONFIG.maxFlavors,
-    zones: Object.fromEntries(Object.entries(CONFIG.delivery.zones).map(([k, z]) => [k, z.fee])),
     leadTimeBusinessDays: CONFIG.leadTimeBusinessDays,
-    rushMinBusinessDays: CONFIG.rush.minBusinessDays,
-    rushSurcharge: CONFIG.rush.surcharge,
   };
 }
 
@@ -23,11 +19,7 @@ export function apply(s) {
   CONFIG.tiers.splice(0, CONFIG.tiers.length, ...s.tiers.map((t) => ({ ...t })).sort((a, b) => b.min - a.min));
   CONFIG.minQuantity = s.minQuantity;
   CONFIG.maxQuantity = s.maxQuantity;
-  CONFIG.maxFlavors = s.maxFlavors;
-  for (const [k, fee] of Object.entries(s.zones)) CONFIG.delivery.zones[k].fee = fee;
   CONFIG.leadTimeBusinessDays = s.leadTimeBusinessDays;
-  CONFIG.rush.minBusinessDays = s.rushMinBusinessDays;
-  CONFIG.rush.surcharge = s.rushSurcharge;
 }
 
 // Fills any missing field from the original numbers. Unknown keys are dropped.
@@ -35,7 +27,7 @@ export function merge(saved) {
   const s = saved && typeof saved === 'object' ? saved : {};
   const merged = { ...DEFAULTS };
   for (const key of Object.keys(DEFAULTS)) if (key in s) merged[key] = s[key];
-  for (const key of ['sizes', 'zones']) {
+  for (const key of ['sizes']) {
     merged[key] = Object.fromEntries(Object.keys(DEFAULTS[key]).map((k) => [k, (s[key] || {})[k] ?? DEFAULTS[key][k]]));
   }
   if (!Array.isArray(merged.tiers)) merged.tiers = DEFAULTS.tiers;
@@ -45,8 +37,7 @@ export function merge(saved) {
 
 // Returns an error message, or '' when the settings are safe to use.
 export function validate(s) {
-  const nums = [...Object.values(s.sizes), ...s.tiers.flatMap((t) => [t.min, t.discount]), s.minQuantity, s.maxQuantity, s.maxFlavors,
-    ...Object.values(s.zones), s.leadTimeBusinessDays, s.rushMinBusinessDays, s.rushSurcharge];
+  const nums = [...Object.values(s.sizes), ...s.tiers.flatMap((t) => [t.min, t.discount]), s.minQuantity, s.maxQuantity, s.leadTimeBusinessDays];
   if (nums.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)) return 'Every field needs a number of 0 or more.';
   if (Object.values(s.sizes).some((p) => p <= 0)) return 'Bag prices must be above $0.';
   if (!Number.isInteger(s.minQuantity) || s.minQuantity < 1) return 'Minimum order must be a whole number of bags, at least 1.';
@@ -55,7 +46,5 @@ export function validate(s) {
   if (s.tiers.some((t) => t.discount > 1)) return 'Discounts cannot be above 100%.';
   if (!s.tiers.some((t) => t.min <= 1)) return 'Keep one tier that starts at 1 bag.';
   if (new Set(s.tiers.map((t) => t.min)).size !== s.tiers.length) return 'Two discount tiers start at the same bag count.';
-  if (!Number.isInteger(s.maxFlavors) || s.maxFlavors < 1) return 'Most flavors per order must be a whole number, at least 1.';
-  if (s.rushMinBusinessDays > s.leadTimeBusinessDays) return 'The rush cutoff cannot be longer than the standard lead time.';
   return '';
 }
