@@ -37,7 +37,7 @@ docs/superpowers/plans/       # implementation plan
 
 ## Pricing assumptions
 
-Edit all pricing in `site/js/pricing-config.js`. Values below match that file.
+Edit all pricing in `site/js/pricing-config.js` and redeploy. Values below match that file.
 
 **Bag size:** hospital orders use one size, the mini bag (<1 cup), at $2.00 each. Branding with the hospital's logo is part of every bag.
 
@@ -45,15 +45,13 @@ Edit all pricing in `site/js/pricing-config.js`. Values below match that file.
 
 | Bags | Discount |
 |---|---|
-| 1000+ | 25% |
-| 300–999 | 20% |
-| 100–299 | 15% |
-| 25–99 | 10% |
-| 1–24 | 0% |
+| 2000+ | 10% |
+| 1000–1999 | 5% |
+| 25–999 | 0% |
 
-The 1–24 tier never applies, because the minimum order is 25 bags.
+**Limits:** minimum 25 bags; maximum 5000 bags (above that the calculator offers a custom quote by phone).
 
-**Limits:** minimum 25 bags; maximum 2000 bags (above that the calculator offers a custom quote by phone).
+**Discount codes:** set in `discountCodes` in `site/js/pricing-config.js` (code → share off the bags after the volume discount). `HEALTHCARE10` (10%) is a placeholder. Codes ship in the page's JavaScript, so anyone can read them; treat them as promo codes, not secrets.
 
 **Flavors:** up to 2 per order.
 
@@ -64,11 +62,3 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 ## Deploy
 
 The site is static, with no build step. On Vercel, import the repository and set the **Root Directory** to `site/`. Leave the build command and output directory empty. `site/vercel.json` enables clean URLs (`/hospitals`; the old `/corporate` URL redirects there) and disables trailing slashes. All pages carry `noindex`, since this is a prototype.
-
-## Editing prices on the live site
-
-The hospitals page has an **Edit pricing** button (bottom left). Changes preview instantly for the person editing. **Publish to public site** saves them for every visitor, and needs the edit password.
-
-- Settings are stored in a Vercel Blob store (`madpopper-pricing`) and served by `site/api/pricing.js`. The server re-checks every number with `site/js/pricing-settings.js`, so a bad value can't be published.
-- The edit password is the `PRICING_EDIT_PASSWORD` environment variable in the Vercel project. Change it with `vercel env rm PRICING_EDIT_PASSWORD` and `vercel env add PRICING_EDIT_PASSWORD production`, then redeploy.
-- Published settings override the defaults in `site/js/pricing-config.js`. A new publish can take a few seconds to reach other visitors.

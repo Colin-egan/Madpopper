@@ -62,6 +62,11 @@
           </details>
           <p class="hint" id="flavor-hint"></p>
         </div>
+        <div class="field">
+          <label for="code">Discount code <span class="optional">(optional)</span></label>
+          <input id="code" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint">
+          <p class="hint" id="code-hint" aria-live="polite"></p>
+        </div>
         <label>Pickup or delivery <select id="fulfillment"></select></label>
         <div class="field">
           <label for="date">Date needed</label>
@@ -83,23 +88,6 @@
     </ol>
     <p class="muted">Pickup or local hospital delivery only. We do <strong>not</strong> ship. Everything we make is 100% nut-free.</p>
   </main>
-  <button type="button" id="pricing-editor-open" class="pe-open" aria-haspopup="dialog">Edit pricing</button>
-  <dialog id="pricing-editor" class="pe-dialog" aria-labelledby="pricing-editor-title">
-    <div class="pe-head">
-      <h2 id="pricing-editor-title">Pricing settings</h2>
-      <button type="button" id="pricing-editor-close" class="pe-close" aria-label="Close">&times;</button>
-    </div>
-    <p class="hint">Changes update the calculator right away so you can preview them. They only go to the public site when you publish with the edit password.</p>
-    <p id="pricing-msg" class="pe-msg" role="status"></p>
-    <form id="pricing-form" novalidate onsubmit="return false"></form>
-    <div class="pe-foot">
-      <label class="pe-pw" for="pricing-password"><span>Edit password</span><input id="pricing-password" type="password" autocomplete="current-password"></label>
-      <div class="pe-actions">
-        <button type="button" id="pricing-reset" class="btn btn--ghost">Discard changes</button>
-        <button type="button" id="pricing-publish" class="btn">Publish to public site</button>
-      </div>
-    </div>
-  </dialog>
   <a id="price-bar" class="price-bar" href="#result"><span>Your price</span><strong id="price-bar-total">Pick a date</strong><span aria-hidden="true">See breakdown &darr;</span></a>
   <div id="site-footer"></div>
   <script type="module" src="js/layout.js"></script>

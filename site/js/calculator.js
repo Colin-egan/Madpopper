@@ -1,6 +1,5 @@
 import { CONFIG } from './pricing-config.js';
-import { calculateQuote } from './pricing.js';
-import { initPricingEditor, loadPublishedSettings } from './pricing-editor.js';
+import { calculateQuote, findCode } from './pricing.js';
 import { initHospitalPicker, selectedHospital } from './hospitals.js';
 
 const SHOP_PHONE = 'tel:+19194847677';
@@ -64,6 +63,7 @@ function readInput() {
     flavors: selectedFlavors().length,
     fulfillment: $('fulfillment').value,
     date: $('date').value,
+    code: $('code').value,
   };
 }
 
@@ -71,6 +71,12 @@ function render() {
   const input = readInput();
   const q = calculateQuote(input, todayStr());
   const box = $('result');
+  const typed = input.code.trim();
+  const hint = $('code-hint');
+  const found = findCode(typed);
+  hint.textContent = !typed ? '' : found ? `Code ${found.code} applied: ${Math.round(found.rate * 100)}% off.` : "That code isn't valid.";
+  hint.classList.toggle('is-ok', Boolean(found));
+  hint.classList.toggle('is-error', Boolean(typed) && !found);
   $('price-bar-total').textContent = q.ok ? money(q.total)
     : q.needsQuote ? 'Call for a quote' : !input.date ? 'Pick a date' : 'Check your details';
   if (!q.ok) {
@@ -90,7 +96,7 @@ function render() {
   const body = encodeURIComponent(
     'Prototype estimate (case-study pricing, hypothetical). ' +
     `\nHospital: ${hospital}\nSize: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors (${input.flavors}): ${selectedFlavors().join(', ')}\n` +
-    `Fulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
+    `Fulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nDiscount code: ${q.code || 'none'}\nEstimate: ${money(q.total)}`);
   box.innerHTML = `
     <h2>Your price</h2>
     <p class="total">${money(q.total)}</p>
@@ -99,14 +105,10 @@ function render() {
     <p><a class="btn" href="mailto:?subject=${subject}&amp;body=${body}">Request this order</a></p>`;
 }
 
-// Prices the owner published come first, so the page never flashes the original numbers.
-const published = await loadPublishedSettings();
-
 init();
 initHospitalPicker();
 wireSliders();
 syncFlavors();
-initPricingEditor(() => { refreshLabels(); syncFlavors(); render(); }, published);
 document.addEventListener('hospitalchange', render);
 $('calc').addEventListener('input', () => { syncFlavors(); render(); });
 $('calc').addEventListener('change', () => { syncFlavors(); render(); });

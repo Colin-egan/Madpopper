@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CONFIG } from '../site/js/pricing-config.js';
-import { parseDate, businessDaysBetween, calculateQuote } from '../site/js/pricing.js';
+import { parseDate, businessDaysBetween, calculateQuote, findCode } from '../site/js/pricing.js';
 
 test('parseDate accepts valid and rejects invalid dates', () => {
   assert.equal(parseDate('2027-06-15').toISOString(), '2027-06-15T00:00:00.000Z');
@@ -19,12 +19,12 @@ test('businessDaysBetween skips Sundays and excludes the start day', () => {
 const TODAY = '2027-06-14'; // Monday
 const base = { size: 'mini', quantity: 100, flavors: 2, fulfillment: 'pickup', date: '2027-06-25' };
 
-test('100 minis, pickup, standard lead time: 15% volume discount', () => {
+test('100 minis, pickup: no volume discount below 1000 bags', () => {
   const q = calculateQuote(base, TODAY);
   assert.equal(q.ok, true);
-  assert.equal(q.discountRate, 0.15);
-  assert.equal(q.total, 170); // 100 x $2 = 200, minus 30
-  assert.equal(q.perBag, 1.7);
+  assert.equal(q.discountRate, 0);
+  assert.equal(q.total, 200); // 100 x $2
+  assert.equal(q.perBag, 2);
 });
 
 test('mini bag is the only size, at $2', () => {
@@ -34,18 +34,18 @@ test('mini bag is the only size, at $2', () => {
 });
 
 test('no customization or one-time fees: more flavors and stray options cost nothing', () => {
-  assert.equal(calculateQuote({ ...base, flavors: 1 }, TODAY).total, 170);
-  assert.equal(calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY).total, 170);
+  assert.equal(calculateQuote({ ...base, flavors: 1 }, TODAY).total, 200);
+  assert.equal(calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY).total, 200);
   const labels = calculateQuote({ ...base, flavors: 2 }, TODAY).lines.map((l) => l.label).join(' ');
   assert.doesNotMatch(labels, /setup|flavor|label/i);
 });
 
 test('delivery is free and there is no rush fee', () => {
-  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 170);
-  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 170);
+  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 200);
+  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 200);
   const soon = calculateQuote({ ...base, date: '2027-06-17', fulfillment: 'wake' }, TODAY); // 3 business days out
   assert.equal(soon.ok, true);
-  assert.equal(soon.total, 170);
+  assert.equal(soon.total, 200);
   assert.doesNotMatch(soon.lines.map((l) => l.label).join(' '), /rush|delivery/i);
 });
 
@@ -95,7 +95,7 @@ test('validates quantity, size, flavors, fulfillment', () => {
 });
 
 test('above max quantity returns needsQuote instead of a price', () => {
-  const q = calculateQuote({ ...base, quantity: 2500 }, TODAY);
+  const q = calculateQuote({ ...base, quantity: 5001 }, TODAY);
   assert.equal(q.ok, false);
   assert.equal(q.needsQuote, true);
 });
@@ -104,19 +104,42 @@ test('WakeMed-scale: 6000 minis is a custom-quote order', () => {
   assert.equal(calculateQuote({ ...base, quantity: 6000 }, TODAY).needsQuote, true);
 });
 
-test('1000 minis hits the 25% tier', () => {
-  const q = calculateQuote({ ...base, quantity: 1000, date: '2027-07-20' }, TODAY);
-  assert.equal(q.discountRate, 0.25);
-  assert.equal(q.total, 1500); // 1000 x $2 = 2000, minus 25%
+test('volume tiers: 5% from 1000 bags, 10% from 2000 bags', () => {
+  const rate = (quantity) => calculateQuote({ ...base, quantity }, TODAY).discountRate;
+  assert.equal(rate(999), 0);
+  assert.equal(rate(1000), 0.05);
+  assert.equal(rate(1999), 0.05);
+  assert.equal(rate(2000), 0.10);
+  assert.equal(rate(5000), 0.10);
+  assert.equal(calculateQuote({ ...base, quantity: 1000 }, TODAY).total, 1900); // 2000 minus 5%
+  assert.equal(calculateQuote({ ...base, quantity: 2000 }, TODAY).total, 3600); // 4000 minus 10%
+});
+
+test('discount code takes its share off the bags after the volume discount', () => {
+  const q = calculateQuote({ ...base, quantity: 1000, code: ' healthcare10 ' }, TODAY);
+  assert.equal(q.code, 'HEALTHCARE10');
+  assert.equal(q.total, 1710); // 2000 - 100 (5%) = 1900, minus 10% = 1710
+  assert.match(q.lines.at(-1).label, /HEALTHCARE10/);
+});
+
+test('unknown, blank or missing codes leave the price alone', () => {
+  for (const code of ['NOPE', '', '   ', undefined, null, 42, 'toString', '__proto__']) {
+    const q = calculateQuote({ ...base, code }, TODAY);
+    assert.equal(q.ok, true, String(code));
+    assert.equal(q.total, 200, String(code));
+    assert.equal(q.code, null, String(code));
+  }
+  assert.equal(findCode('nope'), null);
+  assert.deepEqual(findCode('HealthCare10'), { code: 'HEALTHCARE10', rate: 0.1 });
 });
 
 test('line items foot to the total for every quantity, delivery choice and lead time', () => {
   const sum = (lines) => Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
   const dates = ['2027-06-25', '2027-06-16']; // well ahead, shortest notice
-  for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {
+  for (const quantity of [25, 26, 99, 100, 101, 333, 999, 1000, 1001, 1999, 2000, 2001, 4999, 5000]) {
     for (const fulfillment of ['pickup', 'durham', 'wake']) {
       for (const date of dates) {
-        const q = calculateQuote({ ...base, quantity, fulfillment, date }, TODAY);
+        const q = calculateQuote({ ...base, quantity, fulfillment, date, code: 'HEALTHCARE10' }, TODAY);
         assert.equal(q.ok, true);
         assert.equal(sum(q.lines), q.total, `x${quantity} ${fulfillment} ${date}`);
       }

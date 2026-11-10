@@ -19,12 +19,18 @@ export function businessDaysBetween(from, to) {
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 const fail = (errors, needsQuote = false) => ({
-  ok: false, errors, needsQuote, lines: [], subtotal: 0, discountRate: 0, total: 0, perBag: 0,
+  ok: false, errors, needsQuote, lines: [], subtotal: 0, discountRate: 0, total: 0, perBag: 0, code: null,
 });
+
+// Looks up a discount code. Returns { code, rate } for a valid code, or null.
+export function findCode(raw) {
+  const code = typeof raw === 'string' ? raw.trim().toUpperCase() : '';
+  return code && Object.hasOwn(CONFIG.discountCodes, code) ? { code, rate: CONFIG.discountCodes[code] } : null;
+}
 
 export function calculateQuote(input, today) {
   if (input === null || typeof input !== 'object') return fail(['Missing order details.']);
-  const { size, quantity, flavors, fulfillment, date } = input;
+  const { size, quantity, flavors, fulfillment, date, code } = input;
   const errors = [];
 
   const sizeCfg = Object.hasOwn(CONFIG.sizes, size) ? CONFIG.sizes[size] : undefined;
@@ -74,7 +80,14 @@ export function calculateQuote(input, today) {
   const discount = base * discountRate;
   if (discount > 0) lines.push({ label: `Volume discount (${Math.round(discountRate * 100)}%)`, amount: -round2(discount) });
 
+  // An unknown code never blocks a price; the page tells the customer it didn't apply.
+  const applied = findCode(code);
+  if (applied) {
+    const off = (base - discount) * applied.rate;
+    lines.push({ label: `Discount code ${applied.code} (${Math.round(applied.rate * 100)}%)`, amount: -round2(off) });
+  }
+
 
   const total = round2(lines.reduce((sum, l) => sum + l.amount, 0));
-  return { ok: true, errors: [], needsQuote: false, lines, subtotal: round2(base), discountRate, total, perBag: round2(total / quantity) };
+  return { ok: true, errors: [], needsQuote: false, lines, subtotal: round2(base), discountRate, total, perBag: round2(total / quantity), code: applied ? applied.code : null };
 }
