@@ -116,10 +116,19 @@ test('volume tiers: 5% from 1000 bags, 10% from 2000 bags', () => {
 });
 
 test('discount code takes its share off the bags after the volume discount', () => {
-  const q = calculateQuote({ ...base, quantity: 1000, code: ' healthcare10 ' }, TODAY);
-  assert.equal(q.code, 'HEALTHCARE10');
+  const q = calculateQuote({ ...base, quantity: 1000, code: ' #PopForAPurpose ' }, TODAY);
+  assert.equal(q.code, '#popforapurpose');
   assert.equal(q.total, 1710); // 2000 - 100 (5%) = 1900, minus 10% = 1710
-  assert.match(q.lines.at(-1).label, /HEALTHCARE10/);
+  assert.match(q.lines.at(-1).label, /#popforapurpose/);
+});
+
+test('#popforapurpose ignores capitals and the #', () => {
+  for (const code of ['#popforapurpose', '#POPFORAPURPOSE', 'PopForAPurpose', 'popforapurpose']) {
+    assert.deepEqual(findCode(code), { code: '#popforapurpose', rate: 0.1 }, code);
+    assert.equal(calculateQuote({ ...base, code }, TODAY).total, 180, code); // 200 minus 10%
+  }
+  assert.equal(findCode('##popforapurpose'), null);
+  assert.equal(findCode('pop for a purpose'), null);
 });
 
 test('unknown, blank or missing codes leave the price alone', () => {
@@ -130,7 +139,8 @@ test('unknown, blank or missing codes leave the price alone', () => {
     assert.equal(q.code, null, String(code));
   }
   assert.equal(findCode('nope'), null);
-  assert.deepEqual(findCode('HealthCare10'), { code: 'HEALTHCARE10', rate: 0.1 });
+  assert.equal(findCode('#'), null);
+  assert.equal(findCode('HEALTHCARE10'), null);
 });
 
 test('line items foot to the total for every quantity, delivery choice and lead time', () => {
@@ -139,7 +149,7 @@ test('line items foot to the total for every quantity, delivery choice and lead 
   for (const quantity of [25, 26, 99, 100, 101, 333, 999, 1000, 1001, 1999, 2000, 2001, 4999, 5000]) {
     for (const fulfillment of ['pickup', 'durham', 'wake']) {
       for (const date of dates) {
-        const q = calculateQuote({ ...base, quantity, fulfillment, date, code: 'HEALTHCARE10' }, TODAY);
+        const q = calculateQuote({ ...base, quantity, fulfillment, date, code: '#popforapurpose' }, TODAY);
         assert.equal(q.ok, true);
         assert.equal(sum(q.lines), q.total, `x${quantity} ${fulfillment} ${date}`);
       }

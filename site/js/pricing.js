@@ -23,9 +23,10 @@ const fail = (errors, needsQuote = false) => ({
 });
 
 // Looks up a discount code. Returns { code, rate } for a valid code, or null.
+// Codes ignore capitals, surrounding spaces and a leading '#', so "#PopForAPurpose" and "popforapurpose" match.
 export function findCode(raw) {
-  const code = typeof raw === 'string' ? raw.trim().toUpperCase() : '';
-  return code && Object.hasOwn(CONFIG.discountCodes, code) ? { code, rate: CONFIG.discountCodes[code] } : null;
+  const key = typeof raw === 'string' ? raw.trim().replace(/^#/, '').toLowerCase() : '';
+  return key && Object.hasOwn(CONFIG.discountCodes, key) ? { code: `#${key}`, rate: CONFIG.discountCodes[key] } : null;
 }
 
 export function calculateQuote(input, today) {

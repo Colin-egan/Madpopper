@@ -51,7 +51,7 @@ Edit all pricing in `site/js/pricing-config.js` and redeploy. Values below match
 
 **Limits:** minimum 25 bags; maximum 5000 bags (above that the calculator offers a custom quote by phone).
 
-**Discount codes:** set in `discountCodes` in `site/js/pricing-config.js` (code → share off the bags after the volume discount). `HEALTHCARE10` (10%) is a placeholder. Codes ship in the page's JavaScript, so anyone can read them; treat them as promo codes, not secrets.
+**Discount codes:** set in `discountCodes` in `site/js/pricing-config.js` (code → share off the bags after the volume discount). `#popforapurpose` gives 10% off and works in any capitals, with or without the `#`. Codes ship in the page's JavaScript, so anyone can read them; treat them as promo codes, not secrets.
 
 **Flavors:** up to 2 per order.
 
