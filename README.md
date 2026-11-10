@@ -1,8 +1,8 @@
-# Mad Popper — Corporate Orders Calculator (Case Study)
+# Mad Popper — Hospital Orders Calculator (Case Study)
 
-A static HTML clone of [themadpopper.com](https://www.themadpopper.com) with a **corporate orders calculator** that prices a bulk order live in the browser.
+A static HTML clone of [themadpopper.com](https://www.themadpopper.com) with a **hospital orders page**: pick UNC Health, Duke Health or WakeMed to preview its branded bag, then price a bulk order live in the browser.
 
-**Case study, not the official site.** This is a university prototype. It is not affiliated with or endorsed by The Mad Popper. Only the retail bag price ladder is real data copied from the shop's site. Everything corporate (volume discounts, add-on fees, rush surcharge, delivery fees, lead times, limits) is a hypothetical case-study assumption defined in `site/js/pricing-config.js`. The calculator's quotes are not The Mad Popper's price list.
+**Case study, not the official site.** This is a university prototype. It is not affiliated with or endorsed by The Mad Popper. Everything in the hospital pricing (the $2 mini bag price, volume discounts, rush surcharge, delivery fees, lead times, limits) is a hypothetical case-study assumption defined in `site/js/pricing-config.js`. The calculator's quotes are not The Mad Popper's price list.
 
 ## Quick start
 
@@ -13,7 +13,7 @@ npm test     # runs tests/pricing.test.js with node:test
 npm start    # serves site/ at http://localhost:3000 (via npx serve)
 ```
 
-Open `http://localhost:3000/corporate` for the calculator.
+Open `http://localhost:3000/hospitals` for the calculator.
 
 ## Project layout
 
@@ -21,13 +21,13 @@ Open `http://localhost:3000/corporate` for the calculator.
 site/                         # deployable root (Vercel root directory)
 ├── index.html, about.html, sizes.html, flavors.html, gallery.html,
 │   faq.html, allergens.html, popcorn-day.html, fundraisers.html,
-│   corporate.html            # ten pages; corporate.html hosts the calculator
+│   hospitals.html            # ten pages; hospitals.html hosts the calculator
 ├── css/styles.css            # all styles
 ├── js/
 │   ├── layout.js             # shared header/footer and nav highlighting
 │   ├── pricing-config.js     # SINGLE SOURCE of every price and rule
 │   ├── pricing.js            # pure logic: calculateQuote, parseDate, businessDaysBetween
-│   └── calculator.js         # DOM wiring for corporate.html
+│   └── calculator.js         # DOM wiring for hospitals.html (hospitals.js runs the hospital picker)
 └── vercel.json               # cleanUrls, no trailing slash
 tests/pricing.test.js         # node:test suite for pricing.js
 docs/superpowers/plans/       # implementation plan
@@ -39,18 +39,7 @@ docs/superpowers/plans/       # implementation plan
 
 Edit all pricing in `site/js/pricing-config.js`. Values below match that file.
 
-**Bag sizes (retail ladder, the only real data):**
-
-| Size | Unit price |
-|---|---|
-| Mini bag (<1 cup) | $1.25 |
-| Cone / treat bag (1–2 cups) | $3.00 |
-| Snack bag (4 cups) | $5.95 |
-| "Mine" (6 cups) | $8.50 |
-| "Ours" (14 cups) | $15.00 |
-| "Family" (22 cups) | $21.50 |
-| "Party" (35 cups) | $31.50 |
-| "Big ol' popper" (74 cups) | $58.00 |
+**Bag size:** hospital orders use one size, the mini bag (<1 cup), at $2.00 each. Branding with the hospital's logo is part of every bag.
 
 **Volume discount** (case-study assumption, applied to the bag subtotal; the highest matching tier wins):
 
@@ -66,13 +55,7 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 
 **Limits:** minimum 25 bags; maximum 2000 bags (above that the calculator offers a custom quote by phone).
 
-**Options** (not discounted; charged per bag plus a one-time setup):
-
-| Option | Per bag | Setup |
-|---|---|---|
-| Custom-branded label (your logo) | $0.30 | $75.00 |
-
-**Flavors:** 2 included, $25 for each additional flavor, up to 6 total.
+**Flavors:** up to 6 per order.
 
 **Fulfillment:** pickup at the shop $0.00; Durham / Chapel Hill / RTP business address $35.00; Raleigh / Cary / Morrisville business address $55.00. No shipping.
 
@@ -84,11 +67,11 @@ The 1–24 tier never applies, because the minimum order is 25 bags.
 
 ## Deploy
 
-The site is static, with no build step. On Vercel, import the repository and set the **Root Directory** to `site/`. Leave the build command and output directory empty. `site/vercel.json` enables clean URLs (`/corporate`) and disables trailing slashes. All pages carry `noindex`, since this is a prototype.
+The site is static, with no build step. On Vercel, import the repository and set the **Root Directory** to `site/`. Leave the build command and output directory empty. `site/vercel.json` enables clean URLs (`/hospitals`; the old `/corporate` URL redirects there) and disables trailing slashes. All pages carry `noindex`, since this is a prototype.
 
 ## Editing prices on the live site
 
-The corporate page has an **Edit pricing** button (bottom left). Changes preview instantly for the person editing. **Publish to public site** saves them for every visitor, and needs the edit password.
+The hospitals page has an **Edit pricing** button (bottom left). Changes preview instantly for the person editing. **Publish to public site** saves them for every visitor, and needs the edit password.
 
 - Settings are stored in a Vercel Blob store (`madpopper-pricing`) and served by `site/api/pricing.js`. The server re-checks every number with `site/js/pricing-settings.js`, so a bad value can't be published.
 - The edit password is the `PRICING_EDIT_PASSWORD` environment variable in the Vercel project. Change it with `vercel env rm PRICING_EDIT_PASSWORD` and `vercel env add PRICING_EDIT_PASSWORD production`, then redeploy.

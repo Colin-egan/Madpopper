@@ -1,15 +1,8 @@
-// ASSUMPTIONS: corporate numbers below are placeholders for the case study.
-// Retail unit prices are the published prices on themadpopper.com.
+// ASSUMPTIONS: hospital-order numbers below are placeholders for the case study.
 export const CONFIG = {
+  // Hospital orders come in one size: the mini bag, branded with the hospital's logo.
   sizes: {
-    mini:   { label: 'Mini bag (<1 cup)',        unitPrice: 1.25 },
-    cone:   { label: 'Cone / treat bag (1–2 cups)', unitPrice: 3.0 },
-    snack:  { label: 'Snack bag (4 cups)',       unitPrice: 5.95 },
-    mine:   { label: '"Mine" (6 cups)',          unitPrice: 8.5 },
-    ours:   { label: '"Ours" (14 cups)',         unitPrice: 15.0 },
-    family: { label: '"Family" (22 cups)',       unitPrice: 21.5 },
-    party:  { label: '"Party" (35 cups)',        unitPrice: 31.5 },
-    big:    { label: '"Big ol\' popper" (74 cups)', unitPrice: 58.0 },
+    mini: { label: 'Mini bag (<1 cup)', unitPrice: 2.0 },
   },
   // Volume discount on the bag subtotal. First tier whose `min` <= quantity (checked high to low).
   tiers: [
@@ -21,9 +14,6 @@ export const CONFIG = {
   ],
   minQuantity: 25,
   maxQuantity: 2000, // above this, show "request a custom quote"
-  options: {
-    brandedLabel: { label: 'Custom-branded label (your logo)', perBag: 0.30, setup: 75 },
-  },
   // Only flavors on sale now (checked themadpopper.com on 2026-11-03): the all-year menu, the
   // fall/winter seasonal, and this week's rotating flavors. Update when the shop's menu changes.
   flavorGroups: [
@@ -32,14 +22,12 @@ export const CONFIG = {
     { label: 'This week', flavors: ['Apple Pie', 'Sour Cream and Onion'] },
   ],
   defaultFlavors: ['Classic', 'Caramel'],
-  includedFlavors: 2,
-  extraFlavorFee: 25, // per flavor beyond included
   maxFlavors: 6,
   delivery: {
     pickup: { label: 'Pickup at the shop', fee: 0 },
     zones: {
-      durham: { label: 'Durham / Chapel Hill / RTP (business address)', fee: 35 },
-      wake:   { label: 'Raleigh / Cary / Morrisville (business address)', fee: 55 },
+      durham: { label: 'Durham / Chapel Hill / RTP (hospital or business address)', fee: 35 },
+      wake:   { label: 'Raleigh / Cary / Morrisville (hospital or business address)', fee: 55 },
     },
   },
   leadTimeBusinessDays: 5, // standard

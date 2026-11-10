@@ -2,7 +2,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { list, put } from '@vercel/blob';
 import { merge, validate } from '../js/pricing-settings.js';
 
-const PATHNAME = 'pricing.json';
+// v2: hospital pricing (one $2 mini bag, no add-on fees). Settings published earlier live in pricing.json and are ignored.
+const PATHNAME = 'pricing-v2.json';
 const digest = (s) => createHash('sha256').update(String(s)).digest();
 
 async function readPublished() {

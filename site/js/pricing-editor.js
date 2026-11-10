@@ -36,11 +36,6 @@ function buildForm(form) {
   const s = snapshot();
   const sizes = Object.entries(CONFIG.sizes).map(([k, z]) =>
     num(`pe-size-${k}`, z.label, s.sizes[k], 'step="0.05" min="0" data-size="' + k + '"')).join('');
-  const options = Object.entries(CONFIG.options).map(([k, o]) => `
-    <div class="pe-pair"><strong>${esc(o.label)}</strong>
-      ${num(`pe-opt-${k}-bag`, 'Per bag ($)', o.perBag, 'step="0.05" min="0" data-opt-bag="' + k + '"')}
-      ${num(`pe-opt-${k}-setup`, 'One-time setup ($)', o.setup, 'step="1" min="0" data-opt-setup="' + k + '"')}
-    </div>`).join('');
   const zones = Object.entries(CONFIG.delivery.zones).map(([k, z]) =>
     num(`pe-zone-${k}`, `Delivery: ${z.label} ($)`, z.fee, 'step="1" min="0" data-zone="' + k + '"')).join('');
   const tiers = s.tiers.slice().sort((a, b) => b.min - a.min).map((t) => tierRow(t, t.min <= 1)).join('');
@@ -50,16 +45,13 @@ function buildForm(form) {
       ${num('pe-max', 'Max order before custom pricing (bags)', s.maxQuantity, 'step="1" min="1"')}
       <p class="hint">Orders above the max show "Call for a custom quote" instead of a price.</p>
     </fieldset>
-    <fieldset><legend>Bag prices (each)</legend>${sizes}</fieldset>
+    <fieldset><legend>Bag price (each)</legend>${sizes}</fieldset>
     <fieldset><legend>Volume discounts</legend>
       <div id="pe-tiers">${tiers}</div>
       <button type="button" class="pe-add" id="pe-add-tier">+ Add a tier</button>
       <p class="hint">Applies to the bag subtotal. The highest tier the order reaches is used.</p>
     </fieldset>
-    <fieldset><legend>Customization fees</legend>${options}</fieldset>
     <fieldset><legend>Flavors</legend>
-      ${num('pe-incl', 'Flavors included free', s.includedFlavors, 'step="1" min="0"')}
-      ${num('pe-extra', 'Fee per extra flavor ($)', s.extraFlavorFee, 'step="1" min="0"')}
       ${num('pe-maxfl', 'Most flavors per order', s.maxFlavors, 'step="1" min="1"')}
     </fieldset>
     <fieldset><legend>Delivery</legend>${zones}<p class="hint">Pickup is always free.</p></fieldset>
@@ -76,17 +68,16 @@ function readForm(form) {
   const filled = (sel) => form.querySelector(sel).value.trim() !== '';
   const s = snapshot();
   const out = {
-    sizes: {}, options: {}, zones: {},
+    sizes: {}, zones: {},
     tiers: [...form.querySelectorAll('[data-tier]')].map((row) => ({
       min: Number(row.querySelector('[data-tier-min]').value),
       discount: Number(row.querySelector('[data-tier-discount]').value) / 100,
     })),
     minQuantity: v('#pe-min'), maxQuantity: v('#pe-max'),
-    includedFlavors: v('#pe-incl'), extraFlavorFee: v('#pe-extra'), maxFlavors: v('#pe-maxfl'),
+    maxFlavors: v('#pe-maxfl'),
     leadTimeBusinessDays: v('#pe-lead'), rushMinBusinessDays: v('#pe-rushmin'), rushSurcharge: v('#pe-rush') / 100,
   };
   for (const k of Object.keys(s.sizes)) out.sizes[k] = v(`[data-size="${k}"]`);
-  for (const k of Object.keys(s.options)) out.options[k] = { perBag: v(`[data-opt-bag="${k}"]`), setup: v(`[data-opt-setup="${k}"]`) };
   for (const k of Object.keys(s.zones)) out.zones[k] = v(`[data-zone="${k}"]`);
   // An emptied box reads as 0, so flag it rather than silently pricing at $0.
   const blank = [...form.querySelectorAll('input[type=number]')].some((i) => i.value.trim() === '');

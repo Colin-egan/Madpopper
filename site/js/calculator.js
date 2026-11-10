@@ -1,6 +1,7 @@
 import { CONFIG } from './pricing-config.js';
 import { calculateQuote } from './pricing.js';
 import { initPricingEditor, loadPublishedSettings } from './pricing-editor.js';
+import { initHospitalPicker, selectedHospital } from './hospitals.js';
 
 const SHOP_PHONE = 'tel:+19194847677';
 
@@ -14,11 +15,6 @@ const todayStr = () => {
 };
 
 function init() {
-  $('size').innerHTML = Object.entries(CONFIG.sizes)
-    .map(([k, s]) => `<option value="${escapeHtml(k)}">${escapeHtml(s.label)}, $${s.unitPrice.toFixed(2)} each</option>`).join('');
-  $('size').value = 'mini';
-  $('options').innerHTML = Object.entries(CONFIG.options)
-    .map(([k, o]) => `<label class="check"><input type="checkbox" class="option" value="${escapeHtml(k)}"> ${escapeHtml(o.label)}</label>`).join('');
   $('fulfillment').innerHTML = `<option value="pickup">${escapeHtml(CONFIG.delivery.pickup.label)}</option>` +
     Object.entries(CONFIG.delivery.zones).map(([k, z]) => `<option value="${escapeHtml(k)}">${escapeHtml(z.label)}</option>`).join('');
   $('quantity-range').step = 5;
@@ -34,10 +30,8 @@ function init() {
 
 // Text and limits that depend on CONFIG; run again whenever the pricing editor changes a number.
 function refreshLabels() {
-  const chosen = $('size').value;
-  $('size').innerHTML = Object.entries(CONFIG.sizes)
-    .map(([k, s]) => `<option value="${escapeHtml(k)}">${escapeHtml(s.label)}, $${s.unitPrice.toFixed(2)} each</option>`).join('');
-  $('size').value = chosen in CONFIG.sizes ? chosen : 'mini';
+  const mini = CONFIG.sizes.mini;
+  $('size').textContent = `${mini.label}, $${mini.unitPrice.toFixed(2)} each`;
   const q = $('quantity'), range = $('quantity-range');
   q.min = range.min = CONFIG.minQuantity;
   q.max = range.max = CONFIG.maxQuantity;
@@ -53,9 +47,7 @@ function syncFlavors() {
   const atMax = names.length >= CONFIG.maxFlavors;
   document.querySelectorAll('.flavor').forEach((c) => { c.disabled = atMax && !c.checked; });
   $('flavor-summary').textContent = names.length ? names.join(', ') : 'Choose flavors';
-  const extra = Math.max(0, names.length - CONFIG.includedFlavors);
-  $('flavor-hint').textContent = `${names.length} of ${CONFIG.maxFlavors} chosen. ${CONFIG.includedFlavors} included; each extra adds $${CONFIG.extraFlavorFee}` +
-    (extra ? ` (${extra} extra).` : '.');
+  $('flavor-hint').textContent = `${names.length} of ${CONFIG.maxFlavors} chosen.`;
 }
 
 // Keep the bag slider and number input showing the same value.
@@ -67,10 +59,9 @@ function wireSliders() {
 
 function readInput() {
   return {
-    size: $('size').value,
+    size: 'mini',
     quantity: Number($('quantity').value),
     flavors: selectedFlavors().length,
-    options: [...document.querySelectorAll('.option:checked')].map((c) => c.value),
     fulfillment: $('fulfillment').value,
     date: $('date').value,
   };
@@ -94,12 +85,12 @@ function render() {
   const rows = q.lines.map((l) => `<tr><td>${escapeHtml(l.label)}</td><td class="num">${money(l.amount)}</td></tr>`).join('');
   const fulfillmentLabel = input.fulfillment === 'pickup'
     ? CONFIG.delivery.pickup.label : CONFIG.delivery.zones[input.fulfillment].label;
-  const optionLabels = input.options.map((k) => CONFIG.options[k].label).join(', ') || 'none';
-  const subject = encodeURIComponent('Corporate order request (prototype)');
+  const hospital = selectedHospital().name;
+  const subject = encodeURIComponent(`Hospital order request: ${hospital} (prototype)`);
   const body = encodeURIComponent(
     'Prototype estimate (case-study pricing, hypothetical). ' +
-    `Size: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors (${input.flavors}): ${selectedFlavors().join(', ')}\n` +
-    `Options: ${optionLabels}\nFulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
+    `\nHospital: ${hospital}\nSize: ${CONFIG.sizes[input.size].label}\nBags: ${input.quantity}\nFlavors (${input.flavors}): ${selectedFlavors().join(', ')}\n` +
+    `Fulfillment: ${fulfillmentLabel}\nDate: ${input.date}\nEstimate: ${money(q.total)}`);
   box.innerHTML = `
     <h2>Your price</h2>
     <p class="total">${money(q.total)}</p>
@@ -112,9 +103,11 @@ function render() {
 const published = await loadPublishedSettings();
 
 init();
+initHospitalPicker();
 wireSliders();
 syncFlavors();
 initPricingEditor(() => { refreshLabels(); syncFlavors(); render(); }, published);
+document.addEventListener('hospitalchange', render);
 $('calc').addEventListener('input', () => { syncFlavors(); render(); });
 $('calc').addEventListener('change', () => { syncFlavors(); render(); });
 document.addEventListener('click', (e) => {

@@ -8,9 +8,6 @@ export function snapshot() {
     tiers: CONFIG.tiers.map((t) => ({ min: t.min, discount: t.discount })),
     minQuantity: CONFIG.minQuantity,
     maxQuantity: CONFIG.maxQuantity,
-    options: Object.fromEntries(Object.entries(CONFIG.options).map(([k, o]) => [k, { perBag: o.perBag, setup: o.setup }])),
-    includedFlavors: CONFIG.includedFlavors,
-    extraFlavorFee: CONFIG.extraFlavorFee,
     maxFlavors: CONFIG.maxFlavors,
     zones: Object.fromEntries(Object.entries(CONFIG.delivery.zones).map(([k, z]) => [k, z.fee])),
     leadTimeBusinessDays: CONFIG.leadTimeBusinessDays,
@@ -26,9 +23,6 @@ export function apply(s) {
   CONFIG.tiers.splice(0, CONFIG.tiers.length, ...s.tiers.map((t) => ({ ...t })).sort((a, b) => b.min - a.min));
   CONFIG.minQuantity = s.minQuantity;
   CONFIG.maxQuantity = s.maxQuantity;
-  for (const [k, o] of Object.entries(s.options)) Object.assign(CONFIG.options[k], o);
-  CONFIG.includedFlavors = s.includedFlavors;
-  CONFIG.extraFlavorFee = s.extraFlavorFee;
   CONFIG.maxFlavors = s.maxFlavors;
   for (const [k, fee] of Object.entries(s.zones)) CONFIG.delivery.zones[k].fee = fee;
   CONFIG.leadTimeBusinessDays = s.leadTimeBusinessDays;
@@ -44,8 +38,6 @@ export function merge(saved) {
   for (const key of ['sizes', 'zones']) {
     merged[key] = Object.fromEntries(Object.keys(DEFAULTS[key]).map((k) => [k, (s[key] || {})[k] ?? DEFAULTS[key][k]]));
   }
-  merged.options = Object.fromEntries(Object.keys(DEFAULTS.options).map((k) => [k, { ...DEFAULTS.options[k], ...((s.options || {})[k] || {}) }]));
-  merged.options = Object.fromEntries(Object.entries(merged.options).map(([k, o]) => [k, { perBag: o.perBag, setup: o.setup }]));
   if (!Array.isArray(merged.tiers)) merged.tiers = DEFAULTS.tiers;
   merged.tiers = merged.tiers.map((t) => ({ min: t?.min, discount: t?.discount }));
   return merged;
@@ -53,8 +45,7 @@ export function merge(saved) {
 
 // Returns an error message, or '' when the settings are safe to use.
 export function validate(s) {
-  const nums = [...Object.values(s.sizes), ...s.tiers.flatMap((t) => [t.min, t.discount]), s.minQuantity, s.maxQuantity,
-    ...Object.values(s.options).flatMap((o) => [o.perBag, o.setup]), s.includedFlavors, s.extraFlavorFee, s.maxFlavors,
+  const nums = [...Object.values(s.sizes), ...s.tiers.flatMap((t) => [t.min, t.discount]), s.minQuantity, s.maxQuantity, s.maxFlavors,
     ...Object.values(s.zones), s.leadTimeBusinessDays, s.rushMinBusinessDays, s.rushSurcharge];
   if (nums.some((n) => typeof n !== 'number' || !Number.isFinite(n) || n < 0)) return 'Every field needs a number of 0 or more.';
   if (Object.values(s.sizes).some((p) => p <= 0)) return 'Bag prices must be above $0.';
@@ -64,7 +55,7 @@ export function validate(s) {
   if (s.tiers.some((t) => t.discount > 1)) return 'Discounts cannot be above 100%.';
   if (!s.tiers.some((t) => t.min <= 1)) return 'Keep one tier that starts at 1 bag.';
   if (new Set(s.tiers.map((t) => t.min)).size !== s.tiers.length) return 'Two discount tiers start at the same bag count.';
-  if (s.maxFlavors < 1 || s.includedFlavors > s.maxFlavors) return 'Included flavors cannot be more than the maximum flavors.';
+  if (!Number.isInteger(s.maxFlavors) || s.maxFlavors < 1) return 'Most flavors per order must be a whole number, at least 1.';
   if (s.rushMinBusinessDays > s.leadTimeBusinessDays) return 'The rush cutoff cannot be longer than the standard lead time.';
   return '';
 }

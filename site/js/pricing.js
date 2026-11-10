@@ -24,7 +24,7 @@ const fail = (errors, needsQuote = false) => ({
 
 export function calculateQuote(input, today) {
   if (input === null || typeof input !== 'object') return fail(['Missing order details.']);
-  const { size, quantity, flavors, options = [], fulfillment, date } = input;
+  const { size, quantity, flavors, fulfillment, date } = input;
   const errors = [];
 
   const sizeCfg = Object.hasOwn(CONFIG.sizes, size) ? CONFIG.sizes[size] : undefined;
@@ -35,19 +35,14 @@ export function calculateQuote(input, today) {
   } else if (quantity > CONFIG.maxQuantity) {
     return fail([`Orders over ${CONFIG.maxQuantity.toLocaleString()} bags are custom-quoted. Call 919-484-7677.`], true);
   } else if (quantity < CONFIG.minQuantity) {
-    errors.push(`Corporate orders start at ${CONFIG.minQuantity} bags.`);
+    errors.push(`Hospital orders start at ${CONFIG.minQuantity} bags.`);
   }
 
   if (!Number.isInteger(flavors) || flavors < 1 || flavors > CONFIG.maxFlavors) {
     errors.push(`Choose between 1 and ${CONFIG.maxFlavors} flavors.`);
   }
-  const optionKeys = Array.isArray(options) ? [...new Set(options)] : [];
-  if (!Array.isArray(options)) errors.push('Options must be a list.');
-  for (const o of optionKeys) {
-    if (!Object.hasOwn(CONFIG.options, o)) errors.push(`Unknown option: ${String(o)}.`);
-  }
   const zone = Object.hasOwn(CONFIG.delivery.zones, fulfillment) ? CONFIG.delivery.zones[fulfillment] : undefined;
-  if (fulfillment !== 'pickup' && !zone) errors.push('Choose pickup or a local business delivery zone.');
+  if (fulfillment !== 'pickup' && !zone) errors.push('Choose pickup or a local delivery zone.');
 
   const dateObj = parseDate(date);
   const todayObj = parseDate(today);
@@ -87,14 +82,6 @@ export function calculateQuote(input, today) {
   if (rush) {
     const fee = discounted * CONFIG.rush.surcharge;
     lines.push({ label: `Rush fee (${Math.round(CONFIG.rush.surcharge * 100)}%, under ${CONFIG.leadTimeBusinessDays} business days)`, amount: round2(fee) });
-  }
-  for (const key of optionKeys) {
-    const o = CONFIG.options[key];
-    lines.push({ label: `${o.label} ($${o.perBag.toFixed(2)}/bag)`, amount: round2(o.perBag * quantity) });
-    if (o.setup) lines.push({ label: `${o.label}: one-time setup`, amount: o.setup });
-  }
-  if (flavors > CONFIG.includedFlavors) {
-    lines.push({ label: `${flavors - CONFIG.includedFlavors} extra flavor(s)`, amount: (flavors - CONFIG.includedFlavors) * CONFIG.extraFlavorFee });
   }
   if (zone && zone.fee) lines.push({ label: `Delivery: ${zone.label}`, amount: zone.fee });
 

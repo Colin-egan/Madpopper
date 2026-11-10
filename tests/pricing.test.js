@@ -17,36 +17,39 @@ test('businessDaysBetween skips Sundays and excludes the start day', () => {
 });
 
 const TODAY = '2027-06-14'; // Monday
-const base = { size: 'mini', quantity: 100, flavors: 2, options: [], fulfillment: 'pickup', date: '2027-06-25' };
+const base = { size: 'mini', quantity: 100, flavors: 2, fulfillment: 'pickup', date: '2027-06-25' };
 
 test('100 minis, pickup, standard lead time: 15% volume discount', () => {
   const q = calculateQuote(base, TODAY);
   assert.equal(q.ok, true);
   assert.equal(q.discountRate, 0.15);
-  assert.equal(q.total, 106.25); // 125 - 18.75
-  assert.equal(q.perBag, 1.06); // 106.25/100 rounded to cents
+  assert.equal(q.total, 170); // 100 x $2 = 200, minus 30
+  assert.equal(q.perBag, 1.7);
 });
 
-test('add-ons are not discounted; setup is one-time', () => {
-  const q = calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY);
-  // 106.25 + 100*0.30 + 75 = 211.25 (discount applies to bags only)
-  assert.equal(q.total, 211.25);
+test('mini bag is the only size, at $2', () => {
+  assert.deepEqual(Object.keys(CONFIG.sizes), ['mini']);
+  assert.equal(CONFIG.sizes.mini.unitPrice, 2);
+  assert.equal(calculateQuote({ ...base, size: 'snack' }, TODAY).ok, false);
 });
 
-test('extra flavors beyond 2 cost $25 each', () => {
-  assert.equal(calculateQuote({ ...base, flavors: 4 }, TODAY).total, 156.25);
+test('no customization or one-time fees: more flavors and stray options cost nothing', () => {
+  assert.equal(calculateQuote({ ...base, flavors: 6 }, TODAY).total, 170);
+  assert.equal(calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY).total, 170);
+  const labels = calculateQuote({ ...base, flavors: 6 }, TODAY).lines.map((l) => l.label).join(' ');
+  assert.doesNotMatch(labels, /setup|flavor|label/i);
 });
 
 test('delivery zones add a flat fee', () => {
-  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 141.25);
-  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 161.25);
+  assert.equal(calculateQuote({ ...base, fulfillment: 'durham' }, TODAY).total, 205);
+  assert.equal(calculateQuote({ ...base, fulfillment: 'wake' }, TODAY).total, 225);
 });
 
 test('rush (3 business days out) adds 25% of discounted bag subtotal', () => {
   // 2027-06-17 is 3 business days after Mon 06-14
   const q = calculateQuote({ ...base, date: '2027-06-17' }, TODAY);
   assert.equal(q.rush, true);
-  assert.equal(q.total, 132.81); // 106.25 + 26.5625 -> 132.8125 -> 132.81
+  assert.equal(q.total, 212.5); // 170 + 42.50
 });
 
 test('rejects too-soon dates, Sundays, past dates, and far-future dates', () => {
@@ -73,24 +76,14 @@ test('rush boundaries: 2 and 4 business days are rush, 5 is standard', () => {
   assert.equal(q5.rush, false);
 });
 
-test('duplicate options are charged once', () => {
-  const one = calculateQuote({ ...base, options: ['brandedLabel'] }, TODAY);
-  const dup = calculateQuote({ ...base, options: ['brandedLabel', 'brandedLabel'] }, TODAY);
-  assert.equal(one.total, 211.25);
-  assert.equal(dup.total, one.total);
-});
-
-test('inherited object keys are not accepted as size, option, or fulfillment', () => {
+test('inherited object keys are not accepted as size or fulfillment', () => {
   for (const k of ['toString', 'constructor', '__proto__']) {
     assert.equal(calculateQuote({ ...base, fulfillment: k }, TODAY).ok, false);
     assert.equal(calculateQuote({ ...base, size: k }, TODAY).ok, false);
-    assert.equal(calculateQuote({ ...base, options: [k] }, TODAY).ok, false);
   }
 });
 
 test('malformed input fails validation instead of throwing', () => {
-  assert.equal(calculateQuote({ ...base, options: null }, TODAY).ok, false);
-  assert.equal(calculateQuote({ ...base, options: 'brandedLabel' }, TODAY).ok, false);
   assert.equal(calculateQuote(undefined, TODAY).ok, false);
   assert.equal(calculateQuote(null, TODAY).ok, false);
   assert.equal(calculateQuote('nope', TODAY).ok, false);
@@ -102,13 +95,12 @@ test('invalid today is reported as an internal error', () => {
   assert.match(q.errors[0], /Internal error/);
 });
 
-test('validates quantity, size, flavors, options, fulfillment', () => {
+test('validates quantity, size, flavors, fulfillment', () => {
   assert.equal(calculateQuote({ ...base, quantity: 10 }, TODAY).ok, false);      // below minimum
   assert.equal(calculateQuote({ ...base, quantity: 12.5 }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, size: 'huge' }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, flavors: 0 }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, flavors: 7 }, TODAY).ok, false);
-  assert.equal(calculateQuote({ ...base, options: ['glitter'] }, TODAY).ok, false);
   assert.equal(calculateQuote({ ...base, fulfillment: 'ship' }, TODAY).ok, false); // no shipping
 });
 
@@ -125,21 +117,18 @@ test('WakeMed-scale: 6000 minis is a custom-quote order', () => {
 test('1000 minis hits the 25% tier', () => {
   const q = calculateQuote({ ...base, quantity: 1000, date: '2027-07-20' }, TODAY);
   assert.equal(q.discountRate, 0.25);
-  assert.equal(q.total, 937.5);
+  assert.equal(q.total, 1500); // 1000 x $2 = 2000, minus 25%
 });
 
-test('line items foot to the total for every size, quantity, option set and lead time', () => {
+test('line items foot to the total for every quantity, delivery choice and lead time', () => {
   const sum = (lines) => Math.round(lines.reduce((s, l) => s + l.amount, 0) * 100) / 100;
-  const optionSets = [[], ['brandedLabel']];
   const dates = ['2027-06-25', '2027-06-17']; // standard, rush
-  for (const size of Object.keys(CONFIG.sizes)) {
-    for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {
-      for (const options of optionSets) {
-        for (const date of dates) {
-          const q = calculateQuote({ ...base, size, quantity, options, date }, TODAY);
-          assert.equal(q.ok, true);
-          assert.equal(sum(q.lines), q.total, `${size} x${quantity} [${options}] ${date}`);
-        }
+  for (const quantity of [25, 26, 99, 100, 101, 299, 300, 999, 1000, 2000]) {
+    for (const fulfillment of ['pickup', 'durham', 'wake']) {
+      for (const date of dates) {
+        const q = calculateQuote({ ...base, quantity, fulfillment, date }, TODAY);
+        assert.equal(q.ok, true);
+        assert.equal(sum(q.lines), q.total, `x${quantity} ${fulfillment} ${date}`);
       }
     }
   }

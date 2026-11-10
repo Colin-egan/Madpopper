@@ -1,1 +1,1 @@
-{"cleanUrls": true, "trailingSlash": false}
+{"cleanUrls": true, "trailingSlash": false, "redirects": [{"source": "/corporate", "destination": "/hospitals", "permanent": true}]}

@@ -4,18 +4,48 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
-  <title>Corporate Orders | The Mad Popper</title>
+  <title>Hospital Orders | The Mad Popper</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <div id="site-header"></div>
-  <section class="page-hero"><div class="container"><h1>Corporate Orders</h1><p>Popcorn for your whole team.</p>
+  <section class="page-hero"><div class="container"><h1>Hospital Orders</h1><p>Fresh popcorn for the people who care for the Triangle, in your hospital's colors.</p>
   </div></section>
   <main class="container">
+    <section class="hospital-pick" aria-labelledby="hospital-heading">
+      <figure class="hospital-preview card">
+        <img id="hospital-preview-img" src="assets/images/hospitals/unc-health.webp" alt="" width="2000" height="2000">
+      </figure>
+      <div class="hospital-copy">
+        <h2 id="hospital-heading">Choose your hospital</h2>
+        <p>Every bag is popped fresh, coated in your hospital's colors and wrapped with your logo. Pick a hospital to preview its bag.</p>
+        <div class="field">
+          <span class="label-text" id="hospital-label">Hospital</span>
+          <details class="hospital-dd" id="hospital-dd">
+            <summary id="hospital-summary" aria-labelledby="hospital-label hospital-summary"></summary>
+            <div class="hospital-list" id="hospital-list" role="radiogroup" aria-labelledby="hospital-label"></div>
+          </details>
+        </div>
+        <p class="hospital-name" id="hospital-name"></p>
+        <p id="hospital-colors"></p>
+        <p class="hint" id="hospital-other" hidden>Tell us your hospital's name and colors in your order request and we'll match them.</p>
+        <ul class="hospital-uses">
+          <li>Nurses Week and Doctors' Day</li>
+          <li>Staff appreciation and unit celebrations</li>
+          <li>Night-shift and break-room treats</li>
+        </ul>
+      </div>
+    </section>
+
+    <h2 id="price-heading">Price your order</h2>
     <p class="card">Case-study pricing: these numbers are hypothetical and are not The Mad Popper's price list.</p>
     <div class="calc">
       <form id="calc" class="card" novalidate>
-        <label>Bag size <select id="size"></select></label>
+        <div class="field">
+          <span class="label-text">Bag size</span>
+          <p class="fixed-size" id="size"></p>
+          <p class="hint">Every hospital order uses our mini bag, branded with your hospital's logo.</p>
+        </div>
         <div class="field">
           <label for="quantity">Number of bags</label>
           <div class="slider-row">
@@ -32,7 +62,6 @@
           </details>
           <p class="hint" id="flavor-hint"></p>
         </div>
-        <fieldset><legend>Customization</legend><div id="options"></div></fieldset>
         <label>Pickup or delivery <select id="fulfillment"></select></label>
         <div class="field">
           <label for="date">Date needed</label>
@@ -48,11 +77,11 @@
 
     <h2>How it works</h2>
     <ol>
-      <li>Pick your bag size, quantity and the date you need it.</li>
+      <li>Choose your hospital, then pick how many mini bags, your flavors and the date you need them.</li>
       <li>See your price instantly.</li>
-      <li>We pop it fresh and you pick up, or we deliver to your business.</li>
+      <li>We pop it fresh in your hospital's colors and you pick up, or we deliver to your hospital.</li>
     </ol>
-    <p class="muted">Pickup or local business delivery only. We do <strong>not</strong> ship. Everything we make is 100% nut-free.</p>
+    <p class="muted">Pickup or local hospital delivery only. We do <strong>not</strong> ship. Everything we make is 100% nut-free.</p>
   </main>
   <button type="button" id="pricing-editor-open" class="pe-open" aria-haspopup="dialog">Edit pricing</button>
   <dialog id="pricing-editor" class="pe-dialog" aria-labelledby="pricing-editor-title">

@@ -1,7 +1,7 @@
 const NAV = [
   ['flavors.html', 'Flavors'], ['sizes.html', 'Sizes'], ['allergens.html', 'Allergens'],
   ['fundraisers.html', 'Fundraisers'], ['popcorn-day.html', 'Popcorn Day'], ['gallery.html', 'Gallery'],
-  ['about.html', 'About Us'], ['faq.html', 'FAQ'], ['corporate.html', 'Corporate'],
+  ['about.html', 'About Us'], ['faq.html', 'FAQ'], ['hospitals.html', 'Hospitals'],
 ];
 const strip = (p) => p.replace(/\.html$/, '');
 const page = strip(location.pathname.split('/').pop()) || 'index';
